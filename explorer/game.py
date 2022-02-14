@@ -1,7 +1,7 @@
 import curses
+from types import SimpleNamespace
 
 from contexts.pad import PadContext
-from types import SimpleNamespace
 
 # Parse pixel art in a matrix.
 # Serialize/Deserialize matrix.
@@ -68,6 +68,22 @@ def update(stdscr: curses.window) -> None:
     render_player(stdscr)
 
 
+def listen(key: int) -> None:
+    match key:
+        case 119:  # w
+            PadContext().displace_up()  # type:ignore
+        case 97:  # a
+            PadContext().displace_left()  # type:ignore
+        case 115:  # s
+            PadContext().displace_down()  # type:ignore
+        case 100:  # d
+            PadContext().displace_right()  # type:ignore
+        case 81:  # Q
+            raise Exception
+        case _:
+            pass
+
+
 def main(stdscr: curses.window) -> None:
     stdscr.clear()
     stdscr.refresh()
@@ -99,20 +115,9 @@ def main(stdscr: curses.window) -> None:
 
     render_player(stdscr)
 
-    while True:
-        key = stdscr.getch()
-        # TODO: Abstract this
-        match key:
-            case 119:  # w
-                pad_ctx.displace_up()
-            case 97:  # a
-                pad_ctx.displace_left()
-            case 115:  # s
-                pad_ctx.displace_down()
-            case 100:  # d
-                pad_ctx.displace_right()
-            case 81:  # Q
-                break
-            case _:
-                pass
-        update(stdscr)
+    try:
+        while True:
+            listen(stdscr.getch())
+            update(stdscr)
+    except:
+        pass
