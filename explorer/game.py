@@ -84,7 +84,6 @@ def main(stdscr: curses.window) -> None:
 
     pad_ctx = PadContext(
         curses.newpad(1000, 1000),
-        stdscr,
         0,
         0,
     )

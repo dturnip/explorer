@@ -8,11 +8,10 @@ from lib.singleton import singleton
 @singleton
 class PadContext:
     """
-    Context object for a curses pad, taking a reference to a pad and the stdscr
+    Context object for a curses pad, taking a reference to a pad
     """
 
-    def __init__(self, pad: window, stdscr: window, y_offset: int, x_offset: int) -> None:
-        self.__stdscr = stdscr
+    def __init__(self, pad: window, y_offset: int, x_offset: int) -> None:
         self.__pad = pad
         self.__y_offset = y_offset
         self.__x_offset = x_offset
@@ -22,10 +21,6 @@ class PadContext:
     @property
     def pad(self) -> window:
         return self.__pad
-
-    @property
-    def stdscr(self) -> window:
-        return self.__stdscr
 
     def refresh(self) -> None:
         cy, cx = curses.LINES // 2, curses.COLS // 2
