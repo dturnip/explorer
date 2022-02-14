@@ -1,5 +1,7 @@
 # explorer
 
+**THIS IS A BIG WORK IN PROGRESS**
+
 A simple 2D top down command line game
 
 ## Installation
