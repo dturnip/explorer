@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+"""
+Utility script to display terminal colours
+"""
+
+import curses
+from curses import wrapper
+
+
+def main(stdscr: curses.window):
+    curses.start_color()
+    curses.use_default_colors()
+
+    for i in range(curses.COLORS):
+        curses.init_pair(i + 1, i, -1)
+
+    try:
+        for i in range(curses.COLORS):
+            stdscr.addstr(str(i - 1) + " ", curses.color_pair(i))
+    except curses.error:
+        pass
+
+    stdscr.getch()
+
+
+if __name__ == "__main__":
+    wrapper(main)
