@@ -14,13 +14,15 @@
   | ----- | ------------- | ------- | ---- | ---- | ------------------------------------------------------------- |
   | wall  | 25, 25, 25    | black   | N/A  | N/A  | Player can't travel through this tile                         |
   | path  | 150, 150, 150 | gray    | N/A  | N/A  | Player can travel through this tile                           |
-  | block | 0, 0, 255     | blue    |     | f5ac | Temporary wall, unblocked by defeating associated enemy       |
+  | enemy | 255, 0, 0     | red     |     | f5ac | Interactive tile prompting a fight scene, acts like a wall    |
   | chest | 255, 0, 255   | magenta |     | f8d2 | Interactive tile containing loot: weapons, money, items       |
   | money | 255, 255, 0   | yellow  |     | f155 | Interactive tile which adds money to the inventory            |
-  | enemy | 255, 0, 0     | red     |     | f071 | Interactive tile to fight an enemy, drops loot on win         |
   | shop  | 0, 255, 255   | cyan    |     | f07a | Interactive tile to purchase assorted goods                   |
   | heal  | 0, 255, 0     | green   |     | f7df | Interactive tile which adds a healing item to the inventory   |
   | super | 255, 165, 0   | orange  |     | f005 | Interactive tile which adds a legendary item to the inventory |
+  <!-- Getting flagged out, plan is to combine enemy with block into one entity -->
+  <!--   | block | 0, 0, 255     | blue    |     | f5ac | Temporary wall, unblocked by defeating associated enemy       | -->
+  <!--   | enemy | 255, 0, 0     | red     |     | f071 | Interactive tile to fight an enemy, drops loot on win         | -->
 
 - [ ] :wrench: Fix `PadContext` behavior so that the pad offset will never be large enough to cease pad display
 
