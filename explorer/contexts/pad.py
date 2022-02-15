@@ -34,7 +34,7 @@ class PadContext:
             cx // 3 * 2 + cx,
         )
 
-        print(self.__y_offset, self.__x_offset)
+        # print(self.__y_offset, self.__x_offset)
 
     def displace_up(self) -> None:
         if self.__y_offset > 0:
