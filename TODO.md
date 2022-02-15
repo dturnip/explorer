@@ -20,6 +20,7 @@
   | shop  | 0, 255, 255   | cyan    |     | f07a | Interactive tile to purchase assorted goods                   |
   | heal  | 0, 255, 0     | green   |     | f7df | Interactive tile which adds a healing item to the inventory   |
   | super | 255, 165, 0   | orange  |     | f005 | Interactive tile which adds a legendary item to the inventory |
+  | tree  | 0, 150, 150   | teal    |     | f1bb | Decorative tile which indicates a foresty region of the map   |
   <!-- Getting flagged out, plan is to combine enemy with block into one entity -->
   <!--   | block | 0, 0, 255     | blue    |     | f5ac | Temporary wall, unblocked by defeating associated enemy       | -->
   <!--   | enemy | 255, 0, 0     | red     |     | f071 | Interactive tile to fight an enemy, drops loot on win         | -->
