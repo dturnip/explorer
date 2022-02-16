@@ -20,8 +20,10 @@
   | shop  | 0, 255, 255   | cyan    |     | f07a | Interactive tile to purchase assorted goods                   |
   | heal  | 0, 255, 0     | green   |     | f7df | Interactive tile which adds a healing item to the inventory   |
   | super | 255, 165, 0   | orange  |     | f005 | Interactive tile which adds a legendary item to the inventory |
-  | grass | 0, 100, 0     | dgreen  | N/A   | N/A  | Behavioral tile which slowly heals when the player is on it   |
+  | grass | 0, 100, 0     | dgreen  | N/A  | N/A  | Behavioral tile which slowly heals when the player is on it   |
   | tree  | 0, 150, 150   | teal    |     | f1bb | Decorative tile which indicates nearby healing grass          |
+  | spawn | 200, 125, 200 | pink    |     | f276 | Behavioral tile which is an anchor for player spawn/respawn   |
+
   <!-- Getting flagged out, plan is to combine enemy with block into one entity -->
   <!--   | block | 0, 0, 255     | blue    |     | f5ac | Temporary wall, unblocked by defeating associated enemy       | -->
   <!--   | enemy | 255, 0, 0     | red     |     | f071 | Interactive tile to fight an enemy, drops loot on win         | -->
