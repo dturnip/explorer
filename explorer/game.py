@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from contexts.pad import PadContext
 
+# NOTES
 # Parse pixel art in a matrix.
 # Serialize/Deserialize matrix.
 # 500 squared matrix
@@ -10,17 +11,6 @@ from contexts.pad import PadContext
 # Collision logic
 # State machine for player
 # State machine for game state location
-map = [
-    [""],
-    [""],
-    [""],
-    [""],
-    [""],
-    [""],
-    [""],
-    [""],
-    [""],
-]
 
 
 __Colors: dict[str, int] = {
@@ -64,20 +54,20 @@ def update(stdscr: curses.window) -> None:
     stdscr.refresh()
     PadContext().refresh()  # type: ignore
 
-    # Requires JetbrainsMono Nerd Font
+    # Requires Nerd Fonts compatible font
     render_player(stdscr)
 
 
 def listen(key: int) -> None:
     match key:
         case 119:  # w
-            PadContext().displace_up()  # type:ignore
+            PadContext().displace_up()  # type: ignore
         case 97:  # a
-            PadContext().displace_left()  # type:ignore
+            PadContext().displace_left()  # type: ignore
         case 115:  # s
-            PadContext().displace_down()  # type:ignore
+            PadContext().displace_down()  # type: ignore
         case 100:  # d
-            PadContext().displace_right()  # type:ignore
+            PadContext().displace_right()  # type: ignore
         case 81:  # Q
             raise Exception
         case _:
@@ -105,44 +95,6 @@ def main(stdscr: curses.window) -> None:
     )
 
     pad_ctx.pad.bkgdset(" ", Colors.WHITE_FG_BLACK_BG)
-
-    # for i in range(100):
-    #     pad_ctx.pad.addstr(i, 0, (str(i) if len(str(i)) > 1 else "0" + str(i)) * 300)
-
-    MAP = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ]
-
-    for y, row in enumerate(MAP):
-        for x, tile in enumerate(row):
-            pad_ctx.pad.addch(
-                y,
-                x,
-                " ",
-                Colors.WHITE_FG_BLACK_BG if not tile else Colors.BLACK_FG_WHITE_BG,
-            )
 
     render_border(stdscr)
 
