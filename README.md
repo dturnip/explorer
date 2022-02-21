@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 2. Run as a python module
 
-````bash
+```bash
 python3 -m explorer
 ```
 
@@ -40,4 +40,3 @@ python3 -m explorer
 ```bash
 export TERM=xterm-256color
 ```
-````
