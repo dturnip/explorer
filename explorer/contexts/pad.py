@@ -2,7 +2,7 @@ import curses
 
 from curses import window
 
-from lib.singleton import singleton
+from ..lib.singleton import singleton
 
 
 @singleton
