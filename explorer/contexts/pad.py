@@ -22,6 +22,22 @@ class PadContext:
     def pad(self) -> window:
         return self.__pad
 
+    @property
+    def y_offset(self) -> int:
+        return self.__y_offset
+
+    @property
+    def x_offset(self) -> int:
+        return self.__x_offset
+
+    @y_offset.setter
+    def y_offset(self, new_y_offset) -> None:
+        self.__y_offset = new_y_offset
+
+    @x_offset.setter
+    def x_offset(self, new_x_offset) -> None:
+        self.__x_offset = new_x_offset
+
     def refresh(self) -> None:
         cy, cx = curses.LINES // 2, curses.COLS // 2
 
@@ -41,7 +57,8 @@ class PadContext:
             self.__y_offset -= 1
 
     def displace_down(self) -> None:
-        if self.__y_offset < self.__pad.getmaxyx()[0]:
+        ## TODO: Mathematically calculate this, but this will do for now
+        if self.__y_offset < 345:
             self.__y_offset += 1
 
     def displace_left(self) -> None:
@@ -49,5 +66,5 @@ class PadContext:
             self.__x_offset -= 1
 
     def displace_right(self) -> None:
-        if self.__x_offset < self.__pad.getmaxyx()[1]:
+        if self.__x_offset < 345:
             self.__x_offset += 1

@@ -104,8 +104,9 @@ def main(stdscr: curses.window) -> None:
 
     pad_ctx = PadContext(
         curses.newpad(1000, 1000),
-        0,
-        0,
+        ## TODO: Create a json or yaml map configuration tool so this is flexible instead of limited to one map
+        260,
+        104,
     )
 
     game_map_path = Path(__file__).resolve().parents[1] / "krita" / "explorer_map.png"
