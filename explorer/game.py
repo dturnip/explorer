@@ -1,5 +1,10 @@
 import curses
+from pathlib import Path
+from PIL import Image
 
+from .colors import Colors
+from .contexts.pad import PadContext
+from .lib.parser import parse_image
 
 
 def render_border(stdscr: curses.window) -> None:
@@ -60,6 +65,7 @@ def main(stdscr: curses.window) -> None:
     curses.curs_set(0)
     curses.start_color()
     curses.use_default_colors()
+
     curses.init_pair(1, 231, 16)
     curses.init_pair(2, 240, 16)
     curses.init_pair(3, 135, 16)
@@ -102,6 +108,15 @@ def main(stdscr: curses.window) -> None:
         0,
     )
 
+    game_map_path = Path(__file__).resolve().parents[1] / "krita" / "explorer_map.png"
+    tile_matrix = parse_image(Image.open(game_map_path))
+
+    for row in tile_matrix:
+        for col in row:
+            pad_ctx.pad.addch(col.char, col.color)
+        pad_ctx.pad.addch("\n")
+
+    # pad_ctx.pad.bkgdset(" ", Colors.WHITE_FG_BLACK_BG)
 
     render_border(stdscr)
 
