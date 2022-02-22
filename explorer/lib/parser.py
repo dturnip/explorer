@@ -66,34 +66,56 @@ PIXEL_TO_TILE: dict[tuple[int, int, int], Callable[..., Tile]] = {
 }
 
 
-def parse_image(m: Image.Image) -> list[list[Tile]]:
+def parse_image(m: Image.Image, lines: int, cols: int) -> list[list[Tile]]:
     width, height = m.size
     assert width == height == 256
     # rgb = [[m.getpixel((y, x))[0:3] for y in range(height)] for x in range(width)]
     # return [[PIXEL_TO_TILE[col]() for col in row] for row in rgb]
     ret = []
 
+    # # 100 padding top
+    # for _ in range(100):
+    #     ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + 200)])
+    #
+    # for x in range(width):
+    #     ret.append([])
+    #
+    #     # 100 padding left
+    #     for _ in range(100):
+    #         ret[100 + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
+    #
+    #     # The actual map sandwiched in between
+    #     for y in range(height):
+    #         ret[100 + x].append(PIXEL_TO_TILE[m.getpixel((y, x))[0:3]]())
+    #
+    #     # 100 padding right
+    #     for _ in range(100):
+    #         ret[100 + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
+    #
+    # for _ in range(100):
+    #     ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + 200)])
+
     # 100 padding top
-    for _ in range(100):
-        ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + 200)])
+    for _ in range(lines):
+        ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + lines * 2)])
 
     for x in range(width):
         ret.append([])
 
         # 100 padding left
-        for _ in range(100):
-            ret[100 + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
+        for _ in range(cols):
+            ret[lines + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
 
         # The actual map sandwiched in between
         for y in range(height):
-            ret[100 + x].append(PIXEL_TO_TILE[m.getpixel((y, x))[0:3]]())
+            ret[lines + x].append(PIXEL_TO_TILE[m.getpixel((y, x))[0:3]]())
 
         # 100 padding right
-        for _ in range(100):
-            ret[100 + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
+        for _ in range(cols):
+            ret[lines + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
 
-    for _ in range(100):
-        ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + 200)])
+    for _ in range(lines):
+        ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + cols)])
 
     return ret
 
