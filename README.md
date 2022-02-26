@@ -12,7 +12,7 @@ A simple 2D top down command line game
 
 ## Install & Run
 
-### Linux / macOS
+### macOS
 
 1. Install and setup environment and dependencies:
 
@@ -29,9 +29,13 @@ pip install -r requirements.txt
 python3 -m explorer
 ```
 
+### Linux
+
+:warning: **Currently not supported** :warning:
+
 ### Windows
 
-:warning: **TBA** :warning:
+:warning: **Currently not supported** :warning:
 
 ## Kitty & Alacritty
 
