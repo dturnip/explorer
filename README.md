@@ -4,17 +4,18 @@
 
 A simple 2D top down command line game
 
-## Prerequisites
+## Requisites
 
-- Python 3.10+ is installed
-- A terminal emulator which is able to render 256 colors
-- A terminal emulator equipped with a font that can render Nerd Font glyphs. Two recommended fonts are included in `fonts/`
+- Python 3.10+
+- macOS (Windows and Linux distros are not directly supported yet)
+- Terminal emulator is one of: Terminal, iTerm2, kitty, Alacritty
+- Terminal emulator equipped with `JetbrainsMono Nerd Font`, `Regular`, `16.0` (found in `fonts/`)
 
 ## Install & Run
 
 ### macOS
 
-1. Install and setup environment and dependencies:
+1. Clone, setup environment and install dependencies:
 
 ```bash
 git clone https://github.com/dturnip/explorer.git && \
