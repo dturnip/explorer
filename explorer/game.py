@@ -48,9 +48,7 @@ def update(stdscr: curses.window) -> None:
 
     # Requires Nerd Fonts compatible font
     render_player(stdscr)
-    print(PadContext().x_offset, PadContext().y_offset)  # type: ignore
-    print(PadContext().pad.getmaxyx())  # type: ignore
-    print(curses.COLS)
+    print(PadContext().y_offset, PadContext().x_offset)  # type: ignore
 
 
 def listen(key: int) -> None:
