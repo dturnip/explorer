@@ -110,38 +110,20 @@ def main(stdscr: curses.window) -> None:
 
     Colors.BLACK = curses.color_pair(99)  # black on black
 
-    v_pad = curses.LINES
-    h_pad = curses.COLS
-
-    ## Only for the map in krita/explorer_map.png
-    raw_x_offset = 61
-    raw_y_offset = 174
-
-    from math import ceil, floor
-
-    # initial_y_offset = abs(((v_pad // 2) // 3 - 1) - ((v_pad // 2) // 3 * 2 + (v_pad // 2) + 1))
-    initial_x_offset = ((h_pad // 2) // 3 * 2 + (h_pad // 2) - (h_pad // 2) // 3 + 1 + 2) / 2
-
-    final_x_offset = h_pad + raw_x_offset - ceil(initial_x_offset)
-
-    if final_x_offset % 2 == 1 and ceil(initial_x_offset) != floor(initial_x_offset):
-        final_x_offset = final_x_offset + 1
+    spawn_y = 176 + G.padding_height
+    spawn_x = 61 + G.padding_width
 
     pad_ctx = PadContext(
-        curses.newpad(v_pad * 2 + 256 + 1, h_pad * 2 + 256 + 1),
-        200,
-        final_x_offset,
+        curses.newpad(257 + G.center_y * 2, 257 + G.center_x * 2), spawn_y, spawn_x
     )
 
     game_map_path = Path(__file__).resolve().parents[1] / "krita" / "explorer_map.png"
-    tile_matrix = parse_image(Image.open(game_map_path), v_pad, h_pad)
+    tile_matrix = parse_image(Image.open(game_map_path))
 
     for row in tile_matrix:
         for col in row:
             pad_ctx.pad.addch(col.char, col.color)
         pad_ctx.pad.addch("\n")
-
-    # pad_ctx.pad.bkgdset(" ", Colors.WHITE_FG_BLACK_BG)
 
     render_border(stdscr)
 
