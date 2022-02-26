@@ -36,9 +36,7 @@ def render_border(stdscr: curses.window) -> None:
 
 
 def render_player(stdscr: curses.window) -> None:
-    player_render_y = curses.LINES // 2 if (curses.LINES // 2) % 2 == 1 else curses.LINES // 2 - 1
-    player_render_x = curses.COLS // 2 if (curses.COLS // 2) % 2 == 1 else curses.COLS // 2 - 1
-    stdscr.addstr(player_render_y, player_render_x, "", Colors.OVERLAY)
+    stdscr.addstr(G.center_y, G.center_x, "", Colors.OVERLAY)
 
 
 def update(stdscr: curses.window) -> None:
