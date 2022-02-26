@@ -4,25 +4,33 @@ from PIL import Image
 
 from .colors import Colors
 from .contexts.pad import PadContext
+from .contexts.glob import GlobContext
 from .lib.parser import parse_image
+
+G = GlobContext()
 
 
 def render_border(stdscr: curses.window) -> None:
-    cy, cx = curses.LINES // 2, curses.COLS // 2
-
     stdscr.attron(Colors.OVERLAY)
 
-    ## MARKER
-    stdscr.addstr(cy // 3 * 2 + cy + 1, cx // 3 - 1, "+")
-    stdscr.addstr(cy // 3 - 1, cx // 3 - 1, "+")
-    stdscr.addstr(cy // 3 * 2 + cy + 1, cx // 3 * 2 + cx + 1, "+")
-    stdscr.addstr(cy // 3 - 1, cx // 3 * 2 + cx + 1, "+")
+    # fmt: off
 
-    stdscr.addstr(cy // 3 - 1, cx // 3, "-" * (cx // 3 * 2 + cx - cx // 3 + 1))
-    stdscr.addstr(cy // 3 * 2 + cy + 1, cx // 3, "-" * (cx // 3 * 2 + cx - cx // 3 + 1))
-    for i in range(cy // 3 * 2 + cy - cy // 3 + 1):
-        stdscr.addstr(i + cy // 3, cx // 3 - 1, "|")
-        stdscr.addstr(i + cy // 3, cx // 3 * 2 + cx + 1, "|")
+    # Border corners
+    stdscr.addstr(G.padding_height, G.padding_width, "╔")
+    stdscr.addstr(G.padding_height, G.padding_width + G.game_width - 1, "╗")
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width, "╚")
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width + G.game_width - 1, "╝")
+
+    # Border top, bottom
+    stdscr.addstr(G.padding_height, G.padding_width + 1, "═" * (G.game_width - 2))
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width + 1, "═" * (G.game_width - 2))
+
+    # Bottom left, right
+    for y in range(G.game_height - 2):
+        stdscr.addstr(G.padding_height + y + 1, G.padding_width, "║")
+        stdscr.addstr(G.padding_height + y + 1, G.padding_width + G.game_width - 1, "║")
+
+    # fmt: on
 
     stdscr.attroff(Colors.OVERLAY)
 
