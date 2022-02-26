@@ -1,7 +1,8 @@
-from typing import Callable, Dict, Tuple
+from typing import Callable
 from PIL import Image
 
 from ..colors import Colors
+from ..contexts.glob import GlobContext
 
 
 class Tile:
@@ -66,61 +67,31 @@ PIXEL_TO_TILE: dict[tuple[int, int, int], Callable[..., Tile]] = {
 }
 
 
-def parse_image(m: Image.Image, lines: int, cols: int) -> list[list[Tile]]:
+def parse_image(m: Image.Image) -> list[list[Tile]]:
+    G = GlobContext()
     width, height = m.size
     assert width == height == 256
-    # rgb = [[m.getpixel((y, x))[0:3] for y in range(height)] for x in range(width)]
-    # return [[PIXEL_TO_TILE[col]() for col in row] for row in rgb]
+
+    blank = (255, 255, 255)
+
     ret = []
 
-    # # 100 padding top
-    # for _ in range(100):
-    #     ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + 200)])
-    #
-    # for x in range(width):
-    #     ret.append([])
-    #
-    #     # 100 padding left
-    #     for _ in range(100):
-    #         ret[100 + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
-    #
-    #     # The actual map sandwiched in between
-    #     for y in range(height):
-    #         ret[100 + x].append(PIXEL_TO_TILE[m.getpixel((y, x))[0:3]]())
-    #
-    #     # 100 padding right
-    #     for _ in range(100):
-    #         ret[100 + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
-    #
-    # for _ in range(100):
-    #     ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + 200)])
-
-    # 100 padding top
-    for _ in range(lines):
-        ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + lines * 2)])
+    for _ in range(G.center_y):
+        ret.append([PIXEL_TO_TILE[blank]() for _ in range(width + G.center_x * 2)])
 
     for x in range(width):
         ret.append([])
 
-        # 100 padding left
-        for _ in range(cols):
-            ret[lines + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
+        for _ in range(G.center_x):
+            ret[G.center_y + x].append(PIXEL_TO_TILE[blank]())
 
-        # The actual map sandwiched in between
         for y in range(height):
-            ret[lines + x].append(PIXEL_TO_TILE[m.getpixel((y, x))[0:3]]())
+            ret[G.center_y + x].append(PIXEL_TO_TILE[m.getpixel((y, x))[0:3]]())
 
-        # 100 padding right
-        for _ in range(cols):
-            ret[lines + x].append(PIXEL_TO_TILE[(255, 255, 255)]())
+        for _ in range(G.center_x):
+            ret[G.center_y + x].append(PIXEL_TO_TILE[blank]())
 
-    for _ in range(lines):
-        ret.append([PIXEL_TO_TILE[(255, 255, 255)]() for _ in range(width + cols)])
+    for _ in range(G.center_y):
+        ret.append([PIXEL_TO_TILE[blank]() for _ in range(width + G.center_x * 2)])
 
     return ret
-
-
-# This is a joke
-# fmt: off
-# parse_image: Callable[[Image.Image], list[list[Tile]]] = lambda m: [[PIXEL_TO_TILE[c]() for c in r] for r in [[m.getpixel((y, x))[0:3] for y in range(m.size[1])] for x in range(m.size[0])]]
-# fmt: on
