@@ -7,13 +7,12 @@ A simple 2D top down command line game
 ## Requisites
 
 - Python 3.10+
-- macOS (Windows and Linux distros are not directly supported yet)
-- Terminal emulator is one of: Terminal, iTerm2, kitty, Alacritty
-- Terminal emulator equipped with `JetbrainsMono Nerd Font`, `Regular`, `16.0` (found in `fonts/`)
+- Terminal emulator able to render 256 colors
+- Terminal emulator equipped with a font that can render Nerd Font glyphs. Recommended fonts included in `fonts/`. Font size `16.0` is recommended, but ultimately it doesn't matter.
 
 ## Install & Run
 
-### macOS
+### macOS / Linux
 
 1. Clone, setup environment and install dependencies:
 
@@ -30,13 +29,9 @@ pip install -r requirements.txt
 python3 -m explorer
 ```
 
-### Linux
-
-:warning: **Currently not supported** :warning:
-
 ### Windows
 
-:warning: **Currently not supported** :warning:
+:warning: **TBA** :warning:
 
 ## Kitty & Alacritty
 
