@@ -1,8 +1,9 @@
-import curses
-
 from curses import window
 
 from ..lib.singleton import singleton
+from ..contexts.glob import GlobContext
+
+G = GlobContext()
 
 
 @singleton
@@ -39,32 +40,27 @@ class PadContext:
         self.__x_offset = new_x_offset
 
     def refresh(self) -> None:
-        cy, cx = curses.LINES // 2, curses.COLS // 2
-
         self.__pad.refresh(
             self.__y_offset,
             self.__x_offset,
-            cy // 3,
-            cx // 3,
-            cy // 3 * 2 + cy,
-            cx // 3 * 2 + cx,
+            G.padding_height + 1,
+            G.padding_width + 1,
+            G.padding_height + G.game_height - 2,
+            G.padding_width + G.game_width - 2,
         )
 
-        # print(self.__y_offset, self.__x_offset)
-
     def displace_up(self) -> None:
-        if self.__y_offset > 0:
+        if self.__y_offset - 1 > G.padding_height:
             self.__y_offset -= 1
 
     def displace_down(self) -> None:
-        ## TODO: Mathematically calculate this, but this will do for now
-        if self.__y_offset < 345:
+        if self.__y_offset < 256 + G.padding_height:
             self.__y_offset += 1
 
     def displace_left(self) -> None:
-        if self.__x_offset > 0:
+        if self.__x_offset - 1 > G.padding_width:
             self.__x_offset -= 1
 
     def displace_right(self) -> None:
-        if self.__x_offset < 345:
+        if self.__x_offset < 256 + G.padding_width:
             self.__x_offset += 1
