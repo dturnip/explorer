@@ -4,33 +4,39 @@ from PIL import Image
 
 from .colors import Colors
 from .contexts.pad import PadContext
+from .contexts.glob import GlobContext
 from .lib.parser import parse_image
+
+G = GlobContext()
 
 
 def render_border(stdscr: curses.window) -> None:
-    cy, cx = curses.LINES // 2, curses.COLS // 2
-
     stdscr.attron(Colors.OVERLAY)
 
-    ## MARKER
-    stdscr.addstr(cy // 3 * 2 + cy + 1, cx // 3 - 1, "+")
-    stdscr.addstr(cy // 3 - 1, cx // 3 - 1, "+")
-    stdscr.addstr(cy // 3 * 2 + cy + 1, cx // 3 * 2 + cx + 1, "+")
-    stdscr.addstr(cy // 3 - 1, cx // 3 * 2 + cx + 1, "+")
+    # fmt: off
 
-    stdscr.addstr(cy // 3 - 1, cx // 3, "-" * (cx // 3 * 2 + cx - cx // 3 + 1))
-    stdscr.addstr(cy // 3 * 2 + cy + 1, cx // 3, "-" * (cx // 3 * 2 + cx - cx // 3 + 1))
-    for i in range(cy // 3 * 2 + cy - cy // 3 + 1):
-        stdscr.addstr(i + cy // 3, cx // 3 - 1, "|")
-        stdscr.addstr(i + cy // 3, cx // 3 * 2 + cx + 1, "|")
+    # Border corners
+    stdscr.addstr(G.padding_height, G.padding_width, "╔")
+    stdscr.addstr(G.padding_height, G.padding_width + G.game_width - 1, "╗")
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width, "╚")
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width + G.game_width - 1, "╝")
+
+    # Border top, bottom
+    stdscr.addstr(G.padding_height, G.padding_width + 1, "═" * (G.game_width - 2))
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width + 1, "═" * (G.game_width - 2))
+
+    # Bottom left, right
+    for y in range(G.game_height - 2):
+        stdscr.addstr(G.padding_height + y + 1, G.padding_width, "║")
+        stdscr.addstr(G.padding_height + y + 1, G.padding_width + G.game_width - 1, "║")
+
+    # fmt: on
 
     stdscr.attroff(Colors.OVERLAY)
 
 
 def render_player(stdscr: curses.window) -> None:
-    player_render_y = curses.LINES // 2 if (curses.LINES // 2) % 2 == 1 else curses.LINES // 2 - 1
-    player_render_x = curses.COLS // 2 if (curses.COLS // 2) % 2 == 1 else curses.COLS // 2 - 1
-    stdscr.addstr(player_render_y, player_render_x, "", Colors.OVERLAY)
+    stdscr.addstr(G.center_y, G.center_x, "", Colors.OVERLAY)
 
 
 def update(stdscr: curses.window) -> None:
@@ -42,9 +48,7 @@ def update(stdscr: curses.window) -> None:
 
     # Requires Nerd Fonts compatible font
     render_player(stdscr)
-    print(PadContext().x_offset, PadContext().y_offset)  # type: ignore
-    print(PadContext().pad.getmaxyx())  # type: ignore
-    print(curses.COLS)
+    print(PadContext().y_offset, PadContext().x_offset)  # type: ignore
 
 
 def listen(key: int) -> None:
@@ -106,38 +110,20 @@ def main(stdscr: curses.window) -> None:
 
     Colors.BLACK = curses.color_pair(99)  # black on black
 
-    v_pad = curses.LINES
-    h_pad = curses.COLS
-
-    ## Only for the map in krita/explorer_map.png
-    raw_x_offset = 61
-    raw_y_offset = 174
-
-    from math import ceil, floor
-
-    # initial_y_offset = abs(((v_pad // 2) // 3 - 1) - ((v_pad // 2) // 3 * 2 + (v_pad // 2) + 1))
-    initial_x_offset = ((h_pad // 2) // 3 * 2 + (h_pad // 2) - (h_pad // 2) // 3 + 1 + 2) / 2
-
-    final_x_offset = h_pad + raw_x_offset - ceil(initial_x_offset)
-
-    if final_x_offset % 2 == 1 and ceil(initial_x_offset) != floor(initial_x_offset):
-        final_x_offset = final_x_offset + 1
+    spawn_y = 176 + G.padding_height
+    spawn_x = 61 + G.padding_width
 
     pad_ctx = PadContext(
-        curses.newpad(v_pad * 2 + 256 + 1, h_pad * 2 + 256 + 1),
-        200,
-        final_x_offset,
+        curses.newpad(257 + G.center_y * 2, 257 + G.center_x * 2), spawn_y, spawn_x
     )
 
     game_map_path = Path(__file__).resolve().parents[1] / "krita" / "explorer_map.png"
-    tile_matrix = parse_image(Image.open(game_map_path), v_pad, h_pad)
+    tile_matrix = parse_image(Image.open(game_map_path))
 
     for row in tile_matrix:
         for col in row:
             pad_ctx.pad.addch(col.char, col.color)
         pad_ctx.pad.addch("\n")
-
-    # pad_ctx.pad.bkgdset(" ", Colors.WHITE_FG_BLACK_BG)
 
     render_border(stdscr)
 

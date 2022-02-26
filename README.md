@@ -4,17 +4,17 @@
 
 A simple 2D top down command line game
 
-## Prerequisites
+## Requisites
 
-- Python 3.10+ is installed
-- A terminal emulator which is able to render 256 colors
-- A terminal emulator equipped with a font that can render Nerd Font glyphs. Two recommended fonts are included in `fonts/`
+- Python 3.10+
+- Terminal emulator able to render 256 colors
+- Terminal emulator equipped with a font that can render Nerd Font glyphs. Recommended fonts included in `fonts/`. Font size `16.0` is recommended, but ultimately it doesn't matter.
 
 ## Install & Run
 
-### macOS
+### macOS / Linux
 
-1. Install and setup environment and dependencies:
+1. Clone, setup environment and install dependencies:
 
 ```bash
 git clone https://github.com/dturnip/explorer.git && \
@@ -29,13 +29,9 @@ pip install -r requirements.txt
 python3 -m explorer
 ```
 
-### Linux
-
-:warning: **Currently not supported** :warning:
-
 ### Windows
 
-:warning: **Currently not supported** :warning:
+:warning: **TBA** :warning:
 
 ## Kitty & Alacritty
 

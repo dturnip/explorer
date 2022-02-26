@@ -10,9 +10,9 @@
 
 - [x] :sparkles: Add map parser and renderer; keep in mind these icons require a Nerd Fonts compatible font to render
 
-- [ ] :wrench: Fix player not being able to move to the side of the map by adding padding to the matrix of tiles
+- [x] :wrench: Fix player not being able to move to the side of the map by adding padding to the matrix of tiles
 
-- [ ] :wrench: Fix `PadContext` behavior so that the pad offset will never be large enough to cease pad display
+- [x] :wrench: Fix `PadContext` behavior so that the pad offset will never be large enough to cease pad display
 
 - [ ] :sparkles: Add `GameContext`
 
