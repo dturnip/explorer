@@ -1,41 +1,36 @@
 # explorer
 
-**THIS IS A BIG WORK IN PROGRESS**
+**WORK IN PROGRESS**
 
-A simple 2D top down command line game
+Top down adventure game in the terminal
 
 ## Requisites
 
 - Python 3.10+
-- Terminal emulator able to render 256 colors
-- Terminal emulator equipped with a font that can render Nerd Font glyphs. Recommended fonts included in `fonts/`. Font size `16.0` is recommended, but ultimately it doesn't matter.
+- Terminal emulator is able to render 256 colors
+- Terminal emulator is equipped with a font that can render Nerd Font glyphs. Recommended fonts are included in `fonts/`. Font sizes `16.0`-`24.0` are recommended, but ultimately it doesn't matter. Just be rational.
 
-## Install & Run
+## macOS / Linux
 
-### macOS / Linux
+1. Install
 
-1. Clone, setup environment and install dependencies:
-
-```bash
-git clone https://github.com/dturnip/explorer.git && \
-cd explorer && \
-python3 -m venv venv && source ./venv/bin/activate && \
-pip install -r requirements.txt
+```shell
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/dturnip/explorer/main/install.sh)" && cd explorer
 ```
 
-2. Run as a python module
+2. Run
 
-```bash
-python3 -m explorer
+```shell
+./run.sh
 ```
 
-### Windows
+## Windows
 
 :warning: **TBA** :warning:
 
 ## Kitty & Alacritty
 
-- GPU accelerated terminals are great for this game as there will be less flickering and smoother performance. Both terminals will fail to render specific characters because `$TERM` is something other than `xterm-256color`. Before running the module, run:
+- GPU accelerated terminals are great for this game as there will be less flickering and smoother performance. Both kitty and Alacritty will fail to render specific characters because `$TERM` is something other than `xterm-256color`. The below command fixes this problem (no need if you are using `./run.sh`):
 
 ```bash
 export TERM=xterm-256color
