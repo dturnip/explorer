@@ -3,6 +3,7 @@
 # Check if python3.10+ is installed and bound to python3
 
 ERROR_PREFIX="\033[1;4;31m[ERROR]\033[0m"
+SUCCESS_PREFIX="\033[1;4;32m[SUCCESS]\033[0m"
 command -v python3 &>/dev/null || { echo >&2 "${ERROR_PREFIX} python3 is not" \
 	"installed!\nAborting..."; exit 1; }
 
@@ -22,6 +23,8 @@ echo "~~~ Creating virtual environment ~~~"
 python3 -m venv venv && source ./venv/bin/activate
 echo "~~~ Installing dependencies ~~~"
 pip install -r requirements.txt --disable-pip-version-check
-echo "Installation complete!"
+echo "~~~ Removing installation script ~~~"
+rm ./install.sh
+echo "${SUCCESS_PREFIX} Installation complete!"
 
 exit 0
