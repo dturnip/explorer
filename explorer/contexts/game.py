@@ -1,10 +1,49 @@
 from os import get_terminal_size
-from ..lib.singleton import singleton
+from recordclass import RecordClass  # type: ignore
 from math import floor
+from typing import NamedTuple
+from ..lib.singleton import singleton
+
+
+class Data(RecordClass):
+    class LevelData(RecordClass):
+        level: int
+        xp: int
+        max_xp: int
+
+    class HpData(RecordClass):
+        hp: int
+        max_hp: int
+
+    level = LevelData(level=1, xp=0, max_xp=20)
+    hp = HpData(hp=10, max_hp=10)
+
+
+class Weapon:
+    def __init__(self, name: str, atk: int) -> None:
+        self.name = name
+        self.atk = atk
+
+
+class Inventory(RecordClass):
+    weapons: list[str | None]
+    delusions: list[str | None]
+    heals: list[str | None]
+    items: list[str | None]
+    money: int
 
 
 @singleton
-class GlobContext:
+class GameContext:
+    _side_state = Data
+    _inventory = Inventory(
+        weapons=[None] * 10,
+        delusions=[None] * 3,
+        heals=[None] * 5,
+        items=[None] * 10,
+        money=0,
+    )
+
     def __init__(self) -> None:
         w, h = get_terminal_size()
 
@@ -23,7 +62,9 @@ class GlobContext:
         self.__game_width = self.__width - 2 * floor(self.__width / 8)
 
         self.__padding_height = (self.__height - self.__game_height) // 2
-        self.__padding_width = (self.__width - self.__game_width) // 2
+
+        # self.__padding_width = (self.__width - self.__game_width) // 2
+        self.__padding_width = self.__width - self.__game_width
 
     @property
     def height(self) -> int:
