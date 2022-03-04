@@ -4,10 +4,12 @@ from PIL import Image
 
 from .colors import Colors
 from .contexts.pad import PadContext
-from .contexts.glob import GlobContext
+from .contexts.side import SideContext
+from .contexts.game import GameContext
+from .contexts.player import PlayerContext
 from .lib.parser import parse_image
 
-G = GlobContext()
+G = GameContext()
 
 
 def render_border(stdscr: curses.window) -> None:
@@ -15,20 +17,35 @@ def render_border(stdscr: curses.window) -> None:
 
     # fmt: off
 
-    # Border corners
+    # Main Border corners
     stdscr.addstr(G.padding_height, G.padding_width, "╔")
     stdscr.addstr(G.padding_height, G.padding_width + G.game_width - 1, "╗")
     stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width, "╚")
     stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width + G.game_width - 1, "╝")
 
-    # Border top, bottom
+    # Main Border top, bottom
     stdscr.addstr(G.padding_height, G.padding_width + 1, "═" * (G.game_width - 2))
     stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width + 1, "═" * (G.game_width - 2))
 
-    # Bottom left, right
+    # Main Border left, right
     for y in range(G.game_height - 2):
         stdscr.addstr(G.padding_height + y + 1, G.padding_width, "║")
         stdscr.addstr(G.padding_height + y + 1, G.padding_width + G.game_width - 1, "║")
+
+    # Side Border corners
+    stdscr.addstr(G.padding_height, 1, "╔")
+    stdscr.addstr(G.padding_height, G.padding_width - 2, "╗")
+    stdscr.addstr(G.padding_height + G.game_height - 1, 1, "╚")
+    stdscr.addstr(G.padding_height + G.game_height - 1, G.padding_width - 2, "╝")
+
+    # Side Border top, bottom
+    stdscr.addstr(G.padding_height, 2, "═" * (G.padding_width - 4))
+    stdscr.addstr(G.padding_height + G.game_height - 1, 2, "═" * (G.padding_width - 4))
+
+    # Side Border left, right
+    for y in range(G.game_height - 2):
+        stdscr.addstr(G.padding_height + y + 1, 1, "║")
+        stdscr.addstr(G.padding_height + y + 1, G.padding_width - 2, "║")
 
     # fmt: on
 
@@ -44,11 +61,15 @@ def update(stdscr: curses.window) -> None:
     stdscr.clear()
     render_border(stdscr)
     stdscr.refresh()
+    SideContext().refresh()  # type: ignore
     PadContext().refresh()  # type: ignore
 
     # Requires Nerd Fonts compatible font
     render_player(stdscr)
-    print(PadContext().y_offset, PadContext().x_offset)  # type: ignore
+    # y, x = PlayerContext().y, PlayerContext().x
+    # print(y, x)
+    # print(PlayerContext().map_y, PlayerContext().map_x)
+    # print(PadContext().map[PlayerContext().map_y][PlayerContext().map_x].name)  # type: ignore
 
 
 def listen(key: int) -> None:
@@ -91,6 +112,9 @@ def main(stdscr: curses.window) -> None:
     curses.init_pair(15, 223, 16)
 
     curses.init_pair(99, 16, 16)
+    curses.init_pair(100, 196, 16)
+    curses.init_pair(101, 220, 16)
+    curses.init_pair(102, 46, 16)
 
     Colors.WALL = curses.color_pair(1)  # white on black
     Colors.PATH = curses.color_pair(2)  # gray on black
@@ -109,26 +133,34 @@ def main(stdscr: curses.window) -> None:
     Colors.KEY = curses.color_pair(15)  # tan-yellow on black
 
     Colors.BLACK = curses.color_pair(99)  # black on black
+    Colors.HP_LOW = curses.color_pair(100)  # red on black
+    Colors.HP_MID = curses.color_pair(101)  # yellow on black
+    Colors.HP_HIGH = curses.color_pair(102)  # green on black
 
-    spawn_y = 176 + G.padding_height
-    spawn_x = 61 + G.padding_width
-
-    pad_ctx = PadContext(
-        curses.newpad(257 + G.center_y * 2, 257 + G.center_x * 2), spawn_y, spawn_x
-    )
+    player = PlayerContext(176, 61)
 
     game_map_path = Path(__file__).resolve().parents[1] / "krita" / "explorer_map.png"
     tile_matrix = parse_image(Image.open(game_map_path))
 
-    for row in tile_matrix:
-        for col in row:
-            pad_ctx.pad.addch(col.char, col.color)
-        pad_ctx.pad.addch("\n")
+    pad_ctx = PadContext(
+        curses.newpad(257 + G.center_y * 2, 257 + G.center_x * 2),
+        tile_matrix,
+        player.rel_y,
+        player.rel_x,
+    )
+
+    side_ctx = SideContext(
+        curses.newpad(
+            G.game_height - 1,
+            G.padding_width - 4,
+        )
+    )
 
     render_border(stdscr)
 
     stdscr.refresh()
     pad_ctx.refresh()
+    side_ctx.refresh()
 
     render_player(stdscr)
 
