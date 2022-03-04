@@ -6,4 +6,5 @@ pluggy==1.0.0
 py==1.11.0
 pyparsing==3.0.7
 pytest==7.0.1
+recordclass==0.17.2
 tomli==2.0.1
