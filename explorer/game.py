@@ -52,6 +52,39 @@ class Game:
         self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
         self.redraw()
 
+    def interact_tile(self) -> None:
+        y, x = player.map_y, player.map_x
+        match self.game_map[y][x].id:
+            case 23:  # CHEST
+                # Big ass match clause for all the chests
+                match (player.y, player.x):
+                    case (176, 49):
+                        idx = random.randint(1, 3)
+                        rand_weapon = Weapons[Rarity.Common][idx]()
+                        rand_heal = Heals[1]()
+                        inventory.add_weapon(rand_weapon)
+                        inventory.add_heal(rand_heal)
+                        self.remove_tile(y, x)
+                        # TODO: Make the Side class a singleton, get back my old singleton implementation from github commit logs
+                        # Side.log(f"Got {rand_weapon.name}!")
+                    case (185, 43):
+                        rarity = (Rarity.Common, Rarity.Rare)[random.randint(1, 2) == 1]
+                        idx = random.randint(1, 9)
+                        inventory.add_weapon(Weapons[rarity][idx]())
+                        inventory.add_heal(Heals[1]())
+                        inventory.add_heal(Heals[2]())
+                        self.remove_tile(y, x)
+                    case _:
+                        # Not implemeneted for this chest yet!
+                        pass
+            case 24:  # MONEY
+                inventory.money += 5
+                self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
+                self.redraw()
+                # self.render()
+            case _:
+                pass
+
     def displace_up(self) -> None:
         if self.y_offset - 1 > G.padding_height and not self.is_block(
             player.map_y - 1, player.map_x
