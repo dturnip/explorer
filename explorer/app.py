@@ -2,11 +2,13 @@ import curses
 from pathlib import Path
 from PIL import Image
 from typing import Protocol
+
 from .globals import Colors, Globals as G
 from .game import Game
-from .side import Side
+
+# from .side import Side
 from .lib.parser import parse_image
-from .ctx import Delusion, Delusions, Rarity, Weapon, Healable, inventory, player
+from .ctx import Delusion, Delusions, Rarity, Weapon, Healable, inventory, player, Side
 
 
 class GameObject(Protocol):
@@ -40,9 +42,10 @@ class GameWrapper:
         except StopIteration:
             return None
 
-    def get_side(self) -> Side | None:
+    def get_side(self):
         try:
-            side: Side = next(filter(lambda o: isinstance(o, Side), self.__objects))  # type: ignore
+            # Doing it like this because the Singleton implementation for Side is a decorator using a wrapper class
+            side: Side = next(filter(lambda o: o == Side._instance, self.__objects))  # type: ignore
             return side
         except StopIteration:
             return None
@@ -163,6 +166,7 @@ def main(stdscr: curses.window):
             ),
         ),
     )
+
     game.add_object(
         Side(
             curses.newpad(
@@ -171,6 +175,7 @@ def main(stdscr: curses.window):
             )
         )
     )
+
     game.render()
     game.run()
 

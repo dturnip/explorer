@@ -1,10 +1,9 @@
 import random
 from curses import window
 
-from .side import Side
 from .lib.parser import Tile
 from .globals import Colors, Globals as G
-from .ctx import Healable, Rarity, player, inventory
+from .ctx import Healable, Rarity, Weapon, player, inventory
 from .data.game_items import Weapons, Heals
 
 # GameObject
@@ -52,6 +51,10 @@ class Game:
         self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
         self.redraw()
 
+    # def got(self, *args: Weapon | Healable) -> None:
+    #     for item in args:
+    #         Side().log(f"Got {item.name}!")  # type: ignore
+
     def interact_tile(self) -> None:
         y, x = player.map_y, player.map_x
         match self.game_map[y][x].id:
@@ -65,15 +68,18 @@ class Game:
                         inventory.add_weapon(rand_weapon)
                         inventory.add_heal(rand_heal)
                         self.remove_tile(y, x)
-                        # TODO: Make the Side class a singleton, get back my old singleton implementation from github commit logs
-                        # Side.log(f"Got {rand_weapon.name}!")
+                        # self.got(rand_weapon, rand_heal)
                     case (185, 43):
                         rarity = (Rarity.Common, Rarity.Rare)[random.randint(1, 2) == 1]
                         idx = random.randint(1, 9)
-                        inventory.add_weapon(Weapons[rarity][idx]())
-                        inventory.add_heal(Heals[1]())
-                        inventory.add_heal(Heals[2]())
+                        rand_weapon = Weapons[rarity][idx]()
+                        rand_heal = Heals[1]()
+                        rand_heal2 = Heals[2]()
+                        inventory.add_weapon(rand_weapon)
+                        inventory.add_heal(rand_heal)
+                        inventory.add_heal(rand_heal2)
                         self.remove_tile(y, x)
+                        # self.got(rand_weapon, rand_heal, rand_heal2)
                     case _:
                         # Not implemeneted for this chest yet!
                         pass
@@ -81,6 +87,7 @@ class Game:
                 inventory.money += 5
                 self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
                 self.redraw()
+                # Side().log(f"Got $5!")  # type: ignore
                 # self.render()
             case _:
                 pass
