@@ -48,6 +48,10 @@ class Game:
             case _:
                 return False
 
+    def remove_tile(self, y, x) -> None:
+        self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
+        self.redraw()
+
     def displace_up(self) -> None:
         if self.y_offset - 1 > G.padding_height and not self.is_block(
             player.map_y - 1, player.map_x
