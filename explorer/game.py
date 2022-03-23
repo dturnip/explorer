@@ -1,7 +1,11 @@
+import random
 from curses import window
+
+from .side import Side
 from .lib.parser import Tile
-from .globals import Globals as G
-from .ctx import player
+from .globals import Colors, Globals as G
+from .ctx import Healable, Rarity, player, inventory
+from .data.game_items import Weapons, Heals
 
 # GameObject
 class Game:
@@ -14,12 +18,16 @@ class Game:
         self.y_offset = y_offset or player.rel_y
         self.x_offset = x_offset or player.rel_x
 
-        for row in game_map:
+        self.redraw()
+
+        self.render()
+
+    def redraw(self) -> None:
+        self.pad.clear()
+        for row in self.game_map:
             for col in row:
                 self.pad.addch(col.char, col.color)
             self.pad.addch("\n")
-
-        self.render()
 
     def render(self) -> None:
         self.pad.refresh(
