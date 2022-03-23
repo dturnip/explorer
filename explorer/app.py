@@ -108,7 +108,25 @@ class GameWrapper:
         self.stdscr.attroff(Colors.OVERLAY)
 
     def render_player(self) -> None:
-        self.stdscr.addstr(G.center_y, G.center_x, "", Colors.OVERLAY)
+        game = self.get_game()
+
+        if not game:
+            return
+
+        player_color: int
+        player_char: str
+        match game.game_map[player.map_y][player.map_x].id:
+            case 23:  # CHEST
+                player_color = Colors.CHEST
+                player_char = "E"
+            case 24:  # MONEY
+                player_color = Colors.MONEY
+                player_char = "E"
+            case _:
+                player_color = Colors.OVERLAY
+                player_char = ""
+
+        self.stdscr.addstr(G.center_y, G.center_x, player_char, player_color)
 
     def render(self) -> None:
         self.stdscr.clear()
