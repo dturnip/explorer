@@ -44,6 +44,21 @@ class Colors(RecordClass):
     HP_MID: int
     HP_HIGH: int
 
+    FREEZE: int
+    BURN: int
+    PLANT: int
+    MECH: int
+    CORRUPT: int
+    STUN: int
+    ZAP: int
+    DRAIN: int
+    BLEED: int
+
+    COMMON: int
+    RARE: int
+    EPIC: int
+    MYTHIC: int
+
     @staticmethod
     def setup_colors():
         init_pair(1, 231, 16)
@@ -67,6 +82,21 @@ class Colors(RecordClass):
         init_pair(101, 220, 16)
         init_pair(102, 46, 16)
 
+        init_pair(200, 87, 16)
+        init_pair(201, 202, 16)
+        init_pair(202, 76, 16)
+        init_pair(203, 245, 16)
+        init_pair(204, 141, 16)
+        init_pair(205, 130, 16)
+        init_pair(206, 220, 16)
+        init_pair(207, 90, 16)
+        init_pair(208, 196, 16)
+
+        init_pair(209, 248, 16)
+        init_pair(210, 69, 16)
+        init_pair(211, 177, 16)
+        init_pair(212, 208, 16)
+
         Colors.WALL = color_pair(1)  # white on black
         Colors.PATH = color_pair(2)  # gray on black
         Colors.OVERLAY = color_pair(3)  # purple on black
@@ -87,3 +117,18 @@ class Colors(RecordClass):
         Colors.HP_LOW = color_pair(100)  # red on black
         Colors.HP_MID = color_pair(101)  # yellow on black
         Colors.HP_HIGH = color_pair(102)  # green on black
+
+        Colors.FREEZE = color_pair(200)
+        Colors.BURN = color_pair(201)
+        Colors.PLANT = color_pair(202)
+        Colors.MECH = color_pair(203)
+        Colors.CORRUPT = color_pair(204)
+        Colors.STUN = color_pair(205)
+        Colors.ZAP = color_pair(206)
+        Colors.DRAIN = color_pair(207)
+        Colors.BLEED = color_pair(208)
+
+        Colors.COMMON = color_pair(209)  # common silver
+        Colors.RARE = color_pair(210)  # rare blue
+        Colors.EPIC = color_pair(211)  # epic purple
+        Colors.MYTHIC = color_pair(212)  # legendary orange

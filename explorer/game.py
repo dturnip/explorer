@@ -1,7 +1,11 @@
+import random
 from curses import window
+
+from .side import Side
 from .lib.parser import Tile
-from .globals import Globals as G
-from .ctx import player
+from .globals import Colors, Globals as G
+from .ctx import Healable, Rarity, player, inventory
+from .data.game_items import Weapons, Heals
 
 # GameObject
 class Game:
@@ -14,12 +18,16 @@ class Game:
         self.y_offset = y_offset or player.rel_y
         self.x_offset = x_offset or player.rel_x
 
-        for row in game_map:
+        self.redraw()
+
+        self.render()
+
+    def redraw(self) -> None:
+        self.pad.clear()
+        for row in self.game_map:
             for col in row:
                 self.pad.addch(col.char, col.color)
             self.pad.addch("\n")
-
-        self.render()
 
     def render(self) -> None:
         self.pad.refresh(
@@ -39,6 +47,43 @@ class Game:
                 return True
             case _:
                 return False
+
+    def remove_tile(self, y, x) -> None:
+        self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
+        self.redraw()
+
+    def interact_tile(self) -> None:
+        y, x = player.map_y, player.map_x
+        match self.game_map[y][x].id:
+            case 23:  # CHEST
+                # Big ass match clause for all the chests
+                match (player.y, player.x):
+                    case (176, 49):
+                        idx = random.randint(1, 3)
+                        rand_weapon = Weapons[Rarity.Common][idx]()
+                        rand_heal = Heals[1]()
+                        inventory.add_weapon(rand_weapon)
+                        inventory.add_heal(rand_heal)
+                        self.remove_tile(y, x)
+                        # TODO: Make the Side class a singleton, get back my old singleton implementation from github commit logs
+                        # Side.log(f"Got {rand_weapon.name}!")
+                    case (185, 43):
+                        rarity = (Rarity.Common, Rarity.Rare)[random.randint(1, 2) == 1]
+                        idx = random.randint(1, 9)
+                        inventory.add_weapon(Weapons[rarity][idx]())
+                        inventory.add_heal(Heals[1]())
+                        inventory.add_heal(Heals[2]())
+                        self.remove_tile(y, x)
+                    case _:
+                        # Not implemeneted for this chest yet!
+                        pass
+            case 24:  # MONEY
+                inventory.money += 5
+                self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
+                self.redraw()
+                # self.render()
+            case _:
+                pass
 
     def displace_up(self) -> None:
         if self.y_offset - 1 > G.padding_height and not self.is_block(

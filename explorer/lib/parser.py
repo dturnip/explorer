@@ -4,6 +4,8 @@ from ..globals import Colors, Globals as G
 
 
 class Tile:
+    __slots__ = ("char", "barrier", "color", "id", "name")
+
     def __init__(self, char: str, barrier: bool, color: int, id: int, name: str) -> None:
         self.char = char
         self.barrier = barrier

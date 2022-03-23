@@ -6,6 +6,7 @@ from .globals import Colors, Globals as G
 from .game import Game
 from .side import Side
 from .lib.parser import parse_image
+from .ctx import Delusion, Delusions, Rarity, Weapon, Healable, inventory, player
 
 
 class GameObject(Protocol):
@@ -39,6 +40,13 @@ class GameWrapper:
         except StopIteration:
             return None
 
+    def get_side(self) -> Side | None:
+        try:
+            side: Side = next(filter(lambda o: isinstance(o, Side), self.__objects))  # type: ignore
+            return side
+        except StopIteration:
+            return None
+
     def listen(self) -> None:
         key = self.stdscr.getch()
 
@@ -51,6 +59,13 @@ class GameWrapper:
                 (game := self.get_game()) and game.displace_down()
             case 100:  # d
                 (game := self.get_game()) and game.displace_right()
+            case 69 | 101:  # E or e
+                # Interact with the tile
+                (game := self.get_game()) and game.interact_tile()
+            case 73 | 105:  # I or i
+                (side := self.get_side()) and side.toggle_inventory()
+            case 67 | 99:  # C or c
+                (side := self.get_side()) and side.toggle_console()
             case 81:  # Q
                 # Will get caught and break the loop
                 raise Exception
@@ -93,7 +108,25 @@ class GameWrapper:
         self.stdscr.attroff(Colors.OVERLAY)
 
     def render_player(self) -> None:
-        self.stdscr.addstr(G.center_y, G.center_x, "", Colors.OVERLAY)
+        game = self.get_game()
+
+        if not game:
+            return
+
+        player_color: int
+        player_char: str
+        match game.game_map[player.map_y][player.map_x].id:
+            case 23:  # CHEST
+                player_color = Colors.CHEST
+                player_char = "E"
+            case 24:  # MONEY
+                player_color = Colors.MONEY
+                player_char = "E"
+            case _:
+                player_color = Colors.OVERLAY
+                player_char = ""
+
+        self.stdscr.addstr(G.center_y, G.center_x, player_char, player_color)
 
     def render(self) -> None:
         self.stdscr.clear()
@@ -104,15 +137,22 @@ class GameWrapper:
         self.render_player()
 
     def run(self) -> None:
-        try:
-            while True:
-                self.listen()
-                self.render()
-        except:
-            pass
+        # try:
+        while True:
+            self.listen()
+            self.render()
+
+        # except:
+        #     pass
 
 
 def main(stdscr: curses.window):
+
+    # # Memory debugging
+    # import tracemalloc
+    #
+    # tracemalloc.start()
+
     game = GameWrapper(stdscr)
     game.initialize()
     game.add_object(
@@ -133,3 +173,10 @@ def main(stdscr: curses.window):
     )
     game.render()
     game.run()
+
+    # # Memory debugging
+    # curr, peak = tracemalloc.get_traced_memory()
+    # print(f"Current: {curr} bytes; Peak: {peak} bytes")
+    # tracemalloc.stop()
+    # while True:
+    #     pass
