@@ -6,6 +6,7 @@ from .globals import Colors, Globals as G
 from .game import Game
 from .side import Side
 from .lib.parser import parse_image
+from .ctx import Delusion, Delusions, Rarity, Weapon, Healable, inventory, player
 
 
 class GameObject(Protocol):
@@ -39,6 +40,13 @@ class GameWrapper:
         except StopIteration:
             return None
 
+    def get_side(self) -> Side | None:
+        try:
+            side: Side = next(filter(lambda o: isinstance(o, Side), self.__objects))  # type: ignore
+            return side
+        except StopIteration:
+            return None
+
     def listen(self) -> None:
         key = self.stdscr.getch()
 
@@ -51,6 +59,13 @@ class GameWrapper:
                 (game := self.get_game()) and game.displace_down()
             case 100:  # d
                 (game := self.get_game()) and game.displace_right()
+            case 69 | 101:  # E or e
+                # Interact with the tile
+                (game := self.get_game()) and game.interact_tile()
+            case 73 | 105:  # I or i
+                (side := self.get_side()) and side.toggle_inventory()
+            case 67 | 99:  # C or c
+                (side := self.get_side()) and side.toggle_console()
             case 81:  # Q
                 # Will get caught and break the loop
                 raise Exception
