@@ -137,15 +137,22 @@ class GameWrapper:
         self.render_player()
 
     def run(self) -> None:
-        try:
-            while True:
-                self.listen()
-                self.render()
-        except:
-            pass
+        # try:
+        while True:
+            self.listen()
+            self.render()
+
+        # except:
+        #     pass
 
 
 def main(stdscr: curses.window):
+
+    # # Memory debugging
+    # import tracemalloc
+    #
+    # tracemalloc.start()
+
     game = GameWrapper(stdscr)
     game.initialize()
     game.add_object(
@@ -166,3 +173,10 @@ def main(stdscr: curses.window):
     )
     game.render()
     game.run()
+
+    # # Memory debugging
+    # curr, peak = tracemalloc.get_traced_memory()
+    # print(f"Current: {curr} bytes; Peak: {peak} bytes")
+    # tracemalloc.stop()
+    # while True:
+    #     pass
