@@ -1,7 +1,7 @@
-from typing import Optional
 from recordclass import RecordClass  # type: ignore
 from enum import Enum, auto
-from .globals import Globals as G
+
+from .globals import Colors, Globals as G
 
 
 class Player:
@@ -34,6 +34,89 @@ class Player:
         self.rel_x = x2 + G.padding_height
         self.map_x = x2 + G.center_x - 1
 
+
+class Phase(Enum):
+    begin = auto()
+    counter = auto()
+    end = auto()
+    null = auto()
+
+
+class Turn(Enum):
+    player = auto()
+    opponent = auto()
+    null = auto()
+
+
+class Delusions(Enum):
+    Freeze = auto()
+    Burn = auto()
+    Plant = auto()
+    Mech = auto()
+    Corrupt = auto()
+    Stun = auto()
+    Zap = auto()
+    Drain = auto()
+    Bleed = auto()
+
+
+meta = {
+    Delusions.Freeze: {
+        "strong": Delusions.Burn,
+        "symbol": "",
+        "phase": Phase.begin,
+        "turn": Turn.player,
+    },
+    Delusions.Burn: {
+        "strong": Delusions.Plant,
+        "symbol": "",
+        "phase": Phase.end,
+        "turn": Turn.player,
+    },
+    Delusions.Plant: {
+        "strong": Delusions.Mech,
+        "symbol": "",
+        "phase": Phase.begin,
+        "turn": Turn.player,
+    },
+    Delusions.Mech: {
+        "strong": Delusions.Corrupt,
+        "symbol": "",
+        "phase": Phase.counter,
+        "turn": Turn.opponent,
+    },
+    Delusions.Corrupt: {
+        "strong": Delusions.Stun,
+        "symbol": "",
+        "phase": Phase.counter,
+        "turn": Turn.opponent,
+    },
+    Delusions.Stun: {
+        "strong": Delusions.Zap,
+        "symbol": "",
+        "phase": Phase.end,
+        "turn": Turn.player,
+    },
+    Delusions.Zap: {
+        "strong": Delusions.Freeze,
+        "symbol": "",
+        "phase": Phase.begin,
+        "turn": Turn.opponent,
+    },
+    Delusions.Drain: {
+        "strong": None,
+        "symbol": "",
+        "phase": Phase.end,
+        "turn": Turn.player,
+    },
+    Delusions.Bleed: {
+        "strong": None,
+        "symbol": "",
+        "phase": Phase.end,
+        "turn": Turn.player,
+    },
+}
+#
 
 class Weapon:
     def __init__(self, name: str, atk: int) -> None:
