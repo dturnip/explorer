@@ -1,5 +1,9 @@
 from typing import Callable
 from PIL import Image
+
+from ..ctx import inventory, player
+
+from .singleton import singleton
 from ..globals import Colors, Globals as G
 
 
@@ -92,3 +96,70 @@ def parse_image(m: Image.Image) -> list[list[Tile]]:
         ret.append([PIXEL_TO_TILE[blank]() for _ in range(w + G.center_x * 2)])
 
     return ret
+
+
+COMMANDS = {
+    "switch": ["weapon"],
+}
+
+
+class CommandResult:
+    def __init__(self, resolve: str, ok: bool) -> None:
+        self.resolve = resolve
+        self.ok = ok
+
+
+def parse_command(command: str) -> CommandResult:
+    tokens = command.split()
+    token_stream = iter(tokens)
+
+    parsed_action: str = ""
+
+    try:
+        command_name = next(token_stream)
+        if not command_name in COMMANDS:
+            return CommandResult(f"{command_name}: invalid command", ok=False)
+
+        match command_name:
+            case "switch":
+                if len(tokens) != 3:
+                    # `switch <args>` : args is anything but 2 arguments
+                    return CommandResult("Invalid arguments to `switch`", ok=False)
+                parsed_action += "Switched "
+
+        ###
+
+        flag = next(token_stream)
+        if not flag in COMMANDS[command_name]:
+            # `switch <flag>` : flag is not valid
+            return CommandResult(f"Invalid arguments to `switch`", ok=False)
+
+        match flag:
+            case "weapon":
+                parsed_action += "weapon "
+
+                flag_2 = next(token_stream)
+
+                try:
+                    weapon_slot = int(flag_2)
+                except ValueError:
+                    # `switch weapon <f>` : f is not parseable into an integer
+                    return CommandResult("Invalid arguments to `switch`", ok=False)
+
+                if weapon_slot not in range(1, 6):
+                    # `switch weapon <f>` : f is out of the range [1, 5]
+                    return CommandResult("Invalid arguments to `switch`", ok=False)
+
+                target_weapon = inventory.weapons[weapon_slot - 1]
+                if target_weapon is None:
+                    # `switch weapon <f>` : slot f is None
+                    return CommandResult(f"Slot {weapon_slot} is None", ok=False)
+
+                # Switch weapon to the target_weapon
+                inventory.equipped_weapon = target_weapon
+                parsed_action += f"to {target_weapon.name}"
+
+        next(token_stream)
+
+    except StopIteration:
+        return CommandResult(parsed_action, ok=True)

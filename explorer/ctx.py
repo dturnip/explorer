@@ -1,3 +1,7 @@
+import curses
+import curses.textpad as textpad
+import curses.panel as panel
+from math import floor
 from recordclass import RecordClass  # type: ignore
 from enum import Enum, auto
 from curses import window, A_BOLD
@@ -224,6 +228,7 @@ class Weapon:
         self.atk = atk
         self.delusion = delusion
         self.rarity = rarity
+        self.level = 1
 
     def get_rarity_color(self) -> int:
         match self.rarity:
@@ -261,6 +266,7 @@ class Inventory(RecordClass):
     heals: list[Healable | None]
     items: list[str | None]
     _money: int
+    equipped_weapon: Weapon | None
 
     def add_weapon(self, weapon: Weapon) -> None:
         # By default, weapons is [None, None, None, None, None]
@@ -298,6 +304,23 @@ class Inventory(RecordClass):
         Log(f"Money {curr} -> {n}")
 
 
+LEVEL_META: dict[int, dict[str, int]] = {
+    1: {"max_xp": 20, "base_max_hp": 50},
+}
+
+# The compound scaling is subject to change
+for _ in range(9):
+    LEVEL_META.update(
+        {
+            len(LEVEL_META)
+            + 1: {
+                "max_xp": int(round(LEVEL_META[len(LEVEL_META)]["max_xp"] * 1.8, -1)),
+                "base_max_hp": int(round(LEVEL_META[len(LEVEL_META)]["base_max_hp"] * 1.5, -1)),
+            }
+        }
+    )
+
+
 class State(RecordClass):
     class LevelData(RecordClass):
         level: int
@@ -308,8 +331,71 @@ class State(RecordClass):
         hp: int
         max_hp: int
 
-    level = LevelData(level=1, xp=0, max_xp=20)
-    hp = HpData(hp=10, max_hp=10)
+    level = LevelData(level=1, xp=0, max_xp=LEVEL_META[1]["max_xp"])
+    hp = HpData(hp=LEVEL_META[1]["base_max_hp"], max_hp=LEVEL_META[1]["base_max_hp"])
+
+    def add_xp(self, xp: int) -> None:
+        self.level.xp += xp
+
+    def check_xp(self) -> None:
+        # Recursive function that updates hp, xp, weapon atk based on player level
+        if self.level.level == 10:
+            return
+
+        if self.level.xp < self.level.max_xp:
+            return
+
+        self.level.level += 1
+        self.level.max_xp = LEVEL_META[self.level.level]["max_xp"]
+
+        self.hp.hp = LEVEL_META[self.level.level]["base_max_hp"]
+        self.hp.max_hp = LEVEL_META[self.level.level]["base_max_hp"]
+
+        for weapon in inventory.weapons:
+            if weapon:
+                if weapon.level > self.level.level:
+                    raise Exception("Weapon level and player level are out of sync!")
+
+                while weapon.level < self.level.level:
+                    weapon.atk = floor(weapon.atk * 1.5)
+                    weapon.level += 1
+
+        self.check_xp()
+
+    def update_max_hp(self) -> None:
+        # An equipped weapon's delusion will change the player's hp capacity for game balance
+        if inventory.equipped_weapon is None:
+            return
+
+        match inventory.equipped_weapon.delusion.type:
+            case Delusions.Freeze:
+                hp_multiplier = 1.1
+            case Delusions.Burn:
+                hp_multiplier = 0.75
+            case Delusions.Plant:
+                hp_multiplier = 1.5
+            case Delusions.Mech:
+                hp_multiplier = 1.35
+            case Delusions.Corrupt:
+                hp_multiplier = 0.8
+            case Delusions.Stun:
+                hp_multiplier = 1.05
+            case Delusions.Zap:
+                hp_multiplier = 1.1
+            case Delusions.Drain:
+                hp_multiplier = 1.0
+            case Delusions.Bleed:
+                hp_multiplier = 0.9
+
+        if state.hp.hp == state.hp.max_hp:
+            state.hp.max_hp = floor(
+                round(LEVEL_META[self.level.level]["base_max_hp"]) * hp_multiplier
+            )
+            state.hp.hp = state.hp.max_hp
+        else:
+            state.hp.max_hp = floor(
+                round(LEVEL_META[self.level.level]["base_max_hp"]) * hp_multiplier
+            )
 
 
 class FightState:
@@ -319,13 +405,14 @@ class FightState:
 
 
 player = Player(176, 61)
-state = State
+state = State()
 fight_state = FightState()
 inventory = Inventory(
     weapons=[None] * 5,
     heals=[None] * 8,
     items=[],
     _money=10,
+    equipped_weapon=None,
 )
 
 ##### EVERYTHING TO DO WITH THE SIDE #####
@@ -335,21 +422,26 @@ class SideState(Enum):
     default = auto()
     inventory = auto()
     console = auto()
+    prompt = auto()
 
 
 @singleton
 class Side:
-    def __init__(self, pad: window) -> None:
+    def __init__(self, pad: window, stdscr: window) -> None:
         self.pad = pad
         self.pad.bkgd(" ", Colors.WALL)
 
         self.text: str = ""
         self.state: SideState = SideState.default
+        self.previous_state: SideState = SideState.default
 
         self.log_buffer: deque[str] = deque()
+        self.prompt_buffer: str = ""
 
-        # The height of the unboredered side pad, minus 2 ()
-        self.max_log_length = G.game_height - 2 - 2
+        self.max_log_length: int = G.game_height - 2 - 7
+        self.max_prompt_length: int = G.padding_width - 4 - 18
+
+        self.stdscr = stdscr
 
     def draw_stats(self) -> None:
         draw = self.pad.addstr
@@ -366,25 +458,42 @@ class Side:
         draw("HP: ", A_BOLD)
         draw(f"{state.hp.hp}", self.get_health_color())
         draw(" / ")
-        draw(f"{state.hp.max_hp}\n", Colors.HP_HIGH)
 
+        draw(f"{state.hp.max_hp}\n", Colors.HP_HIGH)
         draw("MONEY: ", A_BOLD)
         draw(f"{inventory.money}\n")
 
-        draw(f"\n\nDEBUG(y, x): ", A_BOLD)
-        draw(f"({player.y}, {player.x})")
+        current_weapon = inventory.equipped_weapon
+
+        draw("\n")
+        draw("ATK: ", A_BOLD)
+        draw(f"{current_weapon.atk if current_weapon else 'Unequipped'}\n")
+        draw("WEAPON: ", A_BOLD)
+        draw(f"{current_weapon.name if current_weapon else 'Unequipped'}\n")
+        draw("DELUSION: ", A_BOLD)
+        draw(
+            f"{str(current_weapon.delusion.type)[10:] + ' ' + current_weapon.delusion.get_symbol() if current_weapon else 'Unequipped'}\n",
+            current_weapon.delusion.get_color() if current_weapon else 0,
+        )
+
+        draw(f"\n\nPlayer Y: ", A_BOLD)
+        draw(f"{player.y}")
+        draw(f"\nPlayer X: ", A_BOLD)
+        draw(f"{player.x}")
 
     def draw_weapon(self, weapon: Weapon | None) -> None:
-
-        # TODO: Show a symbol indicating the currently equipped weapon
-
         draw = self.pad.addstr
 
-        draw("- ")
-
         if weapon is None:
-            draw("\n")
+            draw("-\n")
             return
+
+        position = inventory.weapons.index(weapon) + 1
+
+        if weapon == inventory.equipped_weapon:
+            draw(f"{position}> ", Colors.HEAL)
+        else:
+            draw(f"{position}. ")
 
         draw(f"{weapon.name} ", weapon.get_rarity_color())
         draw("[")
@@ -394,11 +503,12 @@ class Side:
     def draw_heal(self, heal: Healable | None) -> None:
         draw = self.pad.addstr
 
-        draw("- ")
-
         if heal is None:
-            draw("\n")
+            draw("-\n")
             return
+
+        position = inventory.heals.index(heal) + 1
+        draw(f"{position}. ")
 
         draw(f"{heal.name} ", heal.get_rarity_color())
         draw(f"[+{heal.amount}%]\n")
@@ -421,15 +531,28 @@ class Side:
         for heal in inventory.heals:
             self.draw_heal(heal)
 
-    def draw_console(self) -> None:
+    def draw_console(self, prompt: bool) -> None:
         draw = self.pad.addstr
 
         self.pad.clear()
 
-        draw("~~~CONSOLE~~~\n\n")
+        if not prompt:
+            draw("~~~CONSOLE/LOG~~~\n\n")
 
-        for t in self.log_buffer:
-            draw(f"{t}\n")
+            for t in self.log_buffer:
+                draw(f"{t}\n")
+        else:
+            draw("~~~CONSOLE/PROMPT~~~\n\n")
+
+            for t in self.log_buffer:
+                draw(f"{t}\n")
+
+            extra_lines = self.max_log_length - len(self.log_buffer)
+            for _ in range(extra_lines + 2):
+                draw(f"\n")
+
+            draw("COMMAND:\n", Colors.HEAL)
+            draw(self.prompt_buffer, Colors.HEAL)
 
     def log(self, t: str) -> None:
         if len(self.log_buffer) > self.max_log_length:
@@ -446,14 +569,23 @@ class Side:
     def toggle_console(self) -> None:
         self.state = SideState.console if self.state != SideState.console else SideState.default
 
+    def toggle_prompt(self) -> None:
+        # Can only toggle the prompt whne in console mode
+        self.state = SideState.prompt
+
     def render(self) -> None:
+        state.check_xp()
+        state.update_max_hp()
+
         match self.state:
             case SideState.default:
                 self.draw_stats()
             case SideState.inventory:
                 self.draw_inventory()
             case SideState.console:
-                self.draw_console()
+                self.draw_console(prompt=False)
+            case SideState.prompt:
+                self.draw_console(prompt=True)
 
         self.pad.refresh(
             0,

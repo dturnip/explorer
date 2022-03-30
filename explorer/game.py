@@ -3,7 +3,7 @@ from curses import window
 
 from .lib.parser import Tile
 from .globals import Colors, Globals as G
-from .ctx import Healable, Rarity, Weapon, player, inventory
+from .ctx import Healable, Rarity, Weapon, player, inventory, state
 from .data.game_items import Weapons, Heals
 
 # GameObject
@@ -51,9 +51,9 @@ class Game:
         self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
         self.redraw()
 
-    # def got(self, *args: Weapon | Healable) -> None:
-    #     for item in args:
-    #         Side().log(f"Got {item.name}!")  # type: ignore
+    def handle_chest(self, y, x) -> None:
+        self.remove_tile(y, x)
+        state.add_xp(10)
 
     def interact_tile(self) -> None:
         y, x = player.map_y, player.map_x
@@ -67,8 +67,7 @@ class Game:
                         rand_heal = Heals[1]()
                         inventory.add_weapon(rand_weapon)
                         inventory.add_heal(rand_heal)
-                        self.remove_tile(y, x)
-                        # self.got(rand_weapon, rand_heal)
+                        self.handle_chest(y, x)
                     case (185, 43):
                         rarity = (Rarity.Common, Rarity.Rare)[random.randint(1, 2) == 1]
                         idx = random.randint(1, 9)
@@ -78,8 +77,7 @@ class Game:
                         inventory.add_weapon(rand_weapon)
                         inventory.add_heal(rand_heal)
                         inventory.add_heal(rand_heal2)
-                        self.remove_tile(y, x)
-                        # self.got(rand_weapon, rand_heal, rand_heal2)
+                        self.handle_chest(y, x)
                     case _:
                         # Not implemeneted for this chest yet!
                         pass
