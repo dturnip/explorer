@@ -1,10 +1,17 @@
 import random
 from curses import window
 
+from .ctx import Healable, Rarity, Weapon, inventory, player, state
+from .data.game_items import Heals, Weapons
+from .globals import Colors
+from .globals import Globals as G
 from .lib.parser import Tile
-from .globals import Colors, Globals as G
-from .ctx import Healable, Rarity, Weapon, player, inventory, state
-from .data.game_items import Weapons, Heals
+
+
+class EnemyResult:
+    def __init__(self, enemy: Tile | None):
+        self.enemy = enemy
+
 
 # GameObject
 class Game:
@@ -41,11 +48,27 @@ class Game:
     def is_block(self, y, x) -> bool:
         match self.game_map[y][x].id:
             # Walls, enemies, locks
-            # TODO: Make the player be able to stand of the enemy and interact with it, but not pass it
             case t if t in list(range(21)) + [22, 32]:
                 return True
             case _:
                 return False
+
+    def check_enemy(self, y, x) -> EnemyResult:
+        up = self.game_map[y - 1][x]
+        down = self.game_map[y + 1][x]
+        left = self.game_map[y][x - 1]
+        right = self.game_map[y][x + 1]
+
+        if up.id == 22:
+            return EnemyResult(up)
+        if down.id == 22:
+            return EnemyResult(down)
+        if left.id == 22:
+            return EnemyResult(left)
+        if right.id == 22:
+            return EnemyResult(right)
+
+        return EnemyResult(None)
 
     def remove_tile(self, y, x) -> None:
         self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
@@ -62,13 +85,14 @@ class Game:
                 # Big ass match clause for all the chests
                 match (player.y, player.x):
                     case (176, 49):
+                        self.handle_chest(y, x)
                         idx = random.randint(1, 3)
                         rand_weapon = Weapons[Rarity.Common][idx]()
                         rand_heal = Heals[1]()
                         inventory.add_weapon(rand_weapon)
                         inventory.add_heal(rand_heal)
-                        self.handle_chest(y, x)
                     case (185, 43):
+                        self.handle_chest(y, x)
                         rarity = (Rarity.Common, Rarity.Rare)[random.randint(1, 2) == 1]
                         idx = random.randint(1, 9)
                         rand_weapon = Weapons[rarity][idx]()
@@ -77,7 +101,6 @@ class Game:
                         inventory.add_weapon(rand_weapon)
                         inventory.add_heal(rand_heal)
                         inventory.add_heal(rand_heal2)
-                        self.handle_chest(y, x)
                     case _:
                         # Not implemeneted for this chest yet!
                         pass
@@ -87,6 +110,23 @@ class Game:
                 self.redraw()
                 # Side().log(f"Got $5!")  # type: ignore
                 # self.render()
+            case 26:  # HEAL
+                # Chance for bandage: 60%
+                # Chance for health pot: 25%
+                # Chance for med kit: 12%
+                # Chance for blessing: 3%
+                idx = random.random()
+                if idx < 0.03:
+                    heal = Heals[4]()
+                elif idx < 0.15:
+                    heal = Heals[3]()
+                elif idx < 0.40:
+                    heal = Heals[2]()
+                else:
+                    heal = Heals[1]()
+
+                inventory.add_heal(heal)
+                self.remove_tile(y, x)
             case _:
                 pass
 
