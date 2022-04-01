@@ -1,25 +1,30 @@
 import curses
 from pathlib import Path
-from PIL import Image
 from typing import Protocol
 
-from .globals import Colors, Globals as G
-from .game import Game
+from PIL import Image
 
-# from .side import Side
-from .lib.parser import parse_image, parse_command
+from explorer.data.game_items import Weapons
+
 from .ctx import (
     Delusion,
     Delusions,
+    Healable,
     Log,
     Rarity,
+    Side,
     SideState,
     Weapon,
-    Healable,
     inventory,
     player,
-    Side,
+    state,
 )
+from .game import Game
+from .globals import Colors
+from .globals import Globals as G
+
+# from .side import Side
+from .lib.parser import parse_command, parse_image
 
 
 class GameObject(Protocol):
@@ -66,9 +71,8 @@ class GameWrapper:
         side = self.get_side()
         if not side:
             return
-        state = side.state
 
-        match state:
+        match side.state:
             case SideState.prompt:
                 match key:
                     case 10:  # RETURN
@@ -76,13 +80,22 @@ class GameWrapper:
                         command = side.prompt_buffer
                         side.prompt_buffer = ""
 
-                        # Guard here so the console logger doesn't log blank lines
-                        if not (command.isspace() or command == ""):
-                            command_result = parse_command(command)
-                            Log(parse_command(command).resolve)
+                        if side.temp_weapon:
+                            command_result = parse_command(command, replace=True)
+                            Log(command_result.resolve)
+                            side.render()
 
-                            if command_result.ok:
-                                side.state = side.previous_state
+                            if not command_result.ok:
+                                side.toggle_prompt()
+                        else:
+                            # Guard here so the console logger doesn't log blank lines
+                            if not (command.isspace() or command == ""):
+                                command_result = parse_command(command)
+                                # Log(parse_command(command).resolve)
+                                Log(command_result.resolve)
+
+                                if command_result.ok:
+                                    side.state = side.previous_state
 
                     case 127:  # DELETE
                         side.prompt_buffer = side.prompt_buffer[:-1]
@@ -106,6 +119,25 @@ class GameWrapper:
                     case 69 | 101:  # E or e
                         # Interact with the tile
                         game.interact_tile()
+                    case 70 | 102:  # F or f
+                        if game.game_map[player.map_y][player.map_x].id != 34:
+                            return
+
+                        enemy = game.check_enemy(player.map_y, player.map_x)
+                        if not enemy.enemy:
+                            return
+
+                        index_row = [
+                            game.game_map.index(r) for r in game.game_map if enemy.enemy in r
+                        ][0]
+                        index_col = [
+                            r.index(enemy.enemy) for r in game.game_map if enemy.enemy in r
+                        ][0]
+
+                        game.remove_tile(index_row, index_col)
+                        game.remove_tile(player.map_y, player.map_x)
+                        state.hp.hp -= 30
+                        game.render()
                     case 73 | 105:  # I or i
                         side.toggle_inventory()
                     case 67 | 99:  # C or c
@@ -116,28 +148,6 @@ class GameWrapper:
                     case 81:  # Q
                         # Will get caught and break the loop
                         raise Exception
-
-        # match key:
-        #     case 119:  # w
-        #         (game := self.get_game()) and game.displace_up()
-        #     case 97:  # a
-        #         (game := self.get_game()) and game.displace_left()
-        #     case 115:  # s
-        #         (game := self.get_game()) and game.displace_down()
-        #     case 100:  # d
-        #         (game := self.get_game()) and game.displace_right()
-        #     case 69 | 101:  # E or e
-        #         # Interact with the tile
-        #         (game := self.get_game()) and game.interact_tile()
-        #     case 73 | 105:  # I or i
-        #         (side := self.get_side()) and side.toggle_inventory()
-        #     case 67 | 99:  # C or c
-        #         (side := self.get_side()) and side.toggle_console()
-        #     case 80 | 112:  # P or p
-        #         (side := self.get_side()) and side.toggle_prompt()
-        #     case 81:  # Q
-        #         # Will get caught and break the loop
-        #         raise Exception
 
     def render_border(self) -> None:
         draw = self.stdscr.addstr
@@ -251,6 +261,13 @@ def main(stdscr: curses.window):
             stdscr,
         )
     )
+
+    # Debug
+    # inventory.add_weapon(Weapons[Rarity.Mythic][9]())
+    # inventory.add_weapon(Weapons[Rarity.Mythic][8]())
+    # inventory.add_weapon(Weapons[Rarity.Mythic][2]())
+    # inventory.add_weapon(Weapons[Rarity.Mythic][4]())
+    # inventory.add_weapon(Weapons[Rarity.Mythic][5]())
 
     game.render()
     game.run()

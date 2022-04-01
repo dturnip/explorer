@@ -1,15 +1,14 @@
-import curses
-import curses.textpad as textpad
-import curses.panel as panel
-from math import floor
-from recordclass import RecordClass  # type: ignore
-from enum import Enum, auto
-from curses import window, A_BOLD
-from getpass import getuser
 from collections import deque
-from typing import Optional
+from curses import A_BOLD, window
+from enum import Enum, auto
+from getpass import getuser
+from math import floor
+
+from recordclass import RecordClass  # type: ignore
+
+from .globals import Colors
+from .globals import Globals as G
 from .lib.singleton import singleton
-from .globals import Colors, Globals as G
 
 
 class Player:
@@ -142,7 +141,7 @@ class Delusion:
     Corrupt:    50% chance || Make the enemy attack itself with half damage, negate effects
     Stun:       50% chance || Skip their turn
     Zap:        50% chance || Weaken their weapon ATK by 10%
-    Drain:      75% chance || Heal me by 40% of what I strike
+    Drain:      75% chance || Heal me by what I strike
     Bleed:      50% chance || Reduce their HP by 10% of their max HP
 
     Base HP Stats for entities of delusions:
@@ -223,12 +222,14 @@ class Rarity(Enum):
 
 
 class Weapon:
-    def __init__(self, name: str, atk: int, delusion: Delusion, rarity: Rarity) -> None:
+    def __init__(
+        self, name: str, atk: int, delusion: Delusion, rarity: Rarity, level: int = 1
+    ) -> None:
         self.name = name
         self.atk = atk
         self.delusion = delusion
         self.rarity = rarity
-        self.level = 1
+        self.level = level
 
     def get_rarity_color(self) -> int:
         match self.rarity:
@@ -243,7 +244,6 @@ class Weapon:
 
 
 class Healable:
-    # TODO: Rarity
     def __init__(self, name: str, amount: int, rarity: Rarity) -> None:
         self.name = name
         self.amount = amount
@@ -271,6 +271,8 @@ class Inventory(RecordClass):
     def add_weapon(self, weapon: Weapon) -> None:
         # By default, weapons is [None, None, None, None, None]
 
+        ## FLAG!
+
         amount_of_weapons = len(list(filter(lambda weapon: weapon, self.weapons)))
 
         if amount_of_weapons < 5:
@@ -278,17 +280,36 @@ class Inventory(RecordClass):
             Log(f"Got {weapon.name}!")
             return
 
-        raise Exception("TODO: weapon discard/replacement prompt")
+        side = Side()  # type: ignore
+        side.previous_state = side.state
+        side.temp_weapon = weapon
+        state.check_xp()
+
+        # All the math is to draw a responsive sized border around the message in the console
+        Log(f"┏{'━' * (G.padding_width - 7)}┓")
+        msg = f"┃ Got {weapon.name} [{weapon.delusion.get_symbol()} {weapon.atk} {str(weapon.rarity)[7:8]}]!"
+        Log(f"{msg}{' ' * (G.padding_width - 6 - len(msg))}┃")
+        Log(f"┃ Use `replace <n>` or `discard`!{' ' * (G.padding_width - 39)}┃")
+
+        for i, w in enumerate(inventory.weapons):
+            if w:
+                msg = f"┃ {i+1}. {w.name} [{w.delusion.get_symbol()} {w.atk} {str(w.rarity)[7:8]}]"
+                # Log(f"┃ {i+1}. {w.name} [{w.delusion.get_symbol()} {w.atk} {str(w.rarity)[7:8]}]")
+                Log(f"{msg}{' ' * (G.padding_width - 6 - len(msg))}┃")
+
+        Log(f"┗{'━' * (G.padding_width - 7)}┛")
+
+        side.toggle_prompt()
 
     def add_heal(self, heal: Healable) -> None:
         amount_of_heals = len(list(filter(lambda heal: heal, self.heals)))
 
-        if amount_of_heals < 8:
+        if amount_of_heals < 5:
             self.heals[amount_of_heals] = heal
             Log(f"Got {heal.name}!")
             return
 
-        raise Exception("TODO: heals discard/replacement prompt")
+        del heal
 
     def add_item(self) -> None:
         pass
@@ -336,6 +357,7 @@ class State(RecordClass):
 
     def add_xp(self, xp: int) -> None:
         self.level.xp += xp
+        self.check_xp()
 
     def check_xp(self) -> None:
         # Recursive function that updates hp, xp, weapon atk based on player level
@@ -359,6 +381,15 @@ class State(RecordClass):
                 while weapon.level < self.level.level:
                     weapon.atk = floor(weapon.atk * 1.5)
                     weapon.level += 1
+
+        temp_weapon = Side().temp_weapon  # type: ignore
+        if temp_weapon:
+            if temp_weapon.level > self.level.level:
+                raise Exception("Temp Weapon level and player level are out of sync!")
+
+            while temp_weapon.level < self.level.level:
+                temp_weapon.atk = floor(temp_weapon.atk * 1.5)
+                temp_weapon.level += 1
 
         self.check_xp()
 
@@ -409,7 +440,7 @@ state = State()
 fight_state = FightState()
 inventory = Inventory(
     weapons=[None] * 5,
-    heals=[None] * 8,
+    heals=[None] * 5,
     items=[],
     _money=10,
     equipped_weapon=None,
@@ -438,10 +469,12 @@ class Side:
         self.log_buffer: deque[str] = deque()
         self.prompt_buffer: str = ""
 
-        self.max_log_length: int = G.game_height - 2 - 7
+        self.max_log_length: int = G.game_height - 2 - 7 - 8
         self.max_prompt_length: int = G.padding_width - 4 - 18
 
         self.stdscr = stdscr
+
+        self.temp_weapon: Weapon | None = None
 
     def draw_stats(self) -> None:
         draw = self.pad.addstr
@@ -467,12 +500,12 @@ class Side:
 
         draw("\n")
         draw("ATK: ", A_BOLD)
-        draw(f"{current_weapon.atk if current_weapon else 'Unequipped'}\n")
+        draw(f"{current_weapon.atk if current_weapon else 'NA'}\n")
         draw("WEAPON: ", A_BOLD)
-        draw(f"{current_weapon.name if current_weapon else 'Unequipped'}\n")
+        draw(f"{current_weapon.name if current_weapon else 'NA'}\n")
         draw("DELUSION: ", A_BOLD)
         draw(
-            f"{str(current_weapon.delusion.type)[10:] + ' ' + current_weapon.delusion.get_symbol() if current_weapon else 'Unequipped'}\n",
+            f"{str(current_weapon.delusion.type)[10:] + ' ' + current_weapon.delusion.get_symbol() if current_weapon else 'NA'}\n",
             current_weapon.delusion.get_color() if current_weapon else 0,
         )
 
@@ -531,6 +564,33 @@ class Side:
         for heal in inventory.heals:
             self.draw_heal(heal)
 
+    def draw_console_stats(self) -> None:
+        draw = self.pad.addstr
+
+        draw("YOU━━━━━━\n")
+        draw("HP: ", A_BOLD)
+        draw(f"{state.hp.hp}", self.get_health_color())
+        draw(" / ")
+        draw(f"{state.hp.max_hp}\n", Colors.HP_HIGH)
+        draw("ATK/DEL: ", A_BOLD)
+        current_weapon = inventory.equipped_weapon
+        draw(f"{current_weapon.atk if current_weapon else 'NA'}")
+        draw(" / ")
+        draw(
+            f"{str(current_weapon.delusion.type)[10:] + ' ' + current_weapon.delusion.get_symbol() if current_weapon else 'NA'}\n",
+            current_weapon.delusion.get_color() if current_weapon else 0,
+        )
+        draw(f"\n{'Enemy Name'}━━━━━━\n")
+        draw("HP: ", A_BOLD)
+        draw(f"Hp")
+        draw(" / ")
+        draw(f"Max\n", Colors.HP_HIGH)
+        draw("ATK/DEL: ", A_BOLD)
+        draw(f"ATK")
+        draw(" / ")
+        draw(f"DEL\n\n")
+        draw("~~~~~~\n")
+
     def draw_console(self, prompt: bool) -> None:
         draw = self.pad.addstr
 
@@ -539,10 +599,14 @@ class Side:
         if not prompt:
             draw("~~~CONSOLE/LOG~~~\n\n")
 
+            self.draw_console_stats()
+
             for t in self.log_buffer:
                 draw(f"{t}\n")
         else:
             draw("~~~CONSOLE/PROMPT~~~\n\n")
+
+            self.draw_console_stats()
 
             for t in self.log_buffer:
                 draw(f"{t}\n")

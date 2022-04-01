@@ -1,10 +1,11 @@
+from math import floor
 from typing import Callable
+
 from PIL import Image
 
-from ..ctx import inventory, player
-
-from .singleton import singleton
-from ..globals import Colors, Globals as G
+from ..ctx import Side, inventory, state
+from ..globals import Colors
+from ..globals import Globals as G
 
 
 class Tile:
@@ -43,17 +44,18 @@ PIXEL_TO_TILE: dict[tuple[int, int, int], Callable[..., Tile]] = {
     (100, 100, 100): lambda: Tile("│", True, Colors.WALL, 20, "VWALL"),
     # Path
     (150, 150, 150): lambda: Tile(".", False, Colors.PATH, 21, "PATH"),
-    # Enemy \uf5ac
-    (255, 0, 0): lambda: Tile("", True, Colors.ENEMY, 22, "ENEMY"),
-    # Chest \uf8d2
+    # Enemy (icon not final)
+    # (255, 0, 0): lambda: Tile("", True, Colors.ENEMY, 22, "ENEMY"),
+    (255, 0, 0): lambda: Tile("", True, Colors.ENEMY, 22, "ENEMY"),
+    # Chest
     (255, 0, 255): lambda: Tile("", False, Colors.CHEST, 23, "CHEST"),
-    # Money \uf155
+    # Money
     (255, 255, 0): lambda: Tile("", False, Colors.MONEY, 24, "MONEY"),
-    # Shop \uf07a
+    # Shop
     (91, 192, 192): lambda: Tile("", False, Colors.SHOP, 25, "SHOP"),
-    # Heal \uf7df
+    # Heal
     (0, 255, 0): lambda: Tile("", False, Colors.HEAL, 26, "HEAL"),
-    # Super \uf005
+    # Super
     (255, 120, 0): lambda: Tile("", False, Colors.SUPER, 27, "SUPER"),
     # Healing Grass
     (0, 100, 0): lambda: Tile(" ", False, Colors.GRASS, 28, "GRASS"),
@@ -67,6 +69,9 @@ PIXEL_TO_TILE: dict[tuple[int, int, int], Callable[..., Tile]] = {
     (255, 215, 0): lambda: Tile("", True, Colors.LOCK, 32, "LOCK"),
     # Key
     (255, 180, 0): lambda: Tile("", False, Colors.KEY, 33, "KEY"),
+    # Attack path
+    # Change this to Colors.PATH once it works
+    (200, 0, 0): lambda: Tile(".", False, Colors.ENEMY, 34, "ATTACK"),
     # Transparrent tile
     (255, 255, 255): lambda: Tile(" ", False, Colors.BLACK, 999, "VOID"),
 }
@@ -99,7 +104,13 @@ def parse_image(m: Image.Image) -> list[list[Tile]]:
 
 
 COMMANDS = {
-    "switch": ["weapon"],
+    "equip",
+    "replace",
+    "discard",
+    "attack",
+    "pass",
+    "heal",
+    "abandon",
 }
 
 
@@ -109,7 +120,7 @@ class CommandResult:
         self.ok = ok
 
 
-def parse_command(command: str) -> CommandResult:
+def parse_command(command: str, **kwargs) -> CommandResult:
     tokens = command.split()
     token_stream = iter(tokens)
 
@@ -117,49 +128,110 @@ def parse_command(command: str) -> CommandResult:
 
     try:
         command_name = next(token_stream)
+        side = Side()  # type: ignore
+
+        if kwargs.get("replace"):
+            if command_name not in ["replace", "discard"]:
+                return CommandResult(f"Can only use `replace`/`discard` now", ok=False)
+
         if not command_name in COMMANDS:
             return CommandResult(f"{command_name}: invalid command", ok=False)
 
         match command_name:
-            case "switch":
-                if len(tokens) != 3:
-                    # `switch <args>` : args is anything but 2 arguments
-                    return CommandResult("Invalid arguments to `switch`", ok=False)
-                parsed_action += "Switched "
+            case "equip":
+                if len(tokens) != 2:
+                    return CommandResult("Invalid arguments to `equip`", ok=False)
 
-        ###
+            case "heal":
+                if len(tokens) != 2:
+                    return CommandResult("Invalid arguments to `heal`", ok=False)
 
-        flag = next(token_stream)
-        if not flag in COMMANDS[command_name]:
-            # `switch <flag>` : flag is not valid
-            return CommandResult(f"Invalid arguments to `switch`", ok=False)
+            case "replace":
+                _ = kwargs["replace"]
+                if len(tokens) != 2:
+                    return CommandResult("Invalid arguments to `replace`", ok=False)
 
-        match flag:
-            case "weapon":
-                parsed_action += "weapon "
+            case "discard":
+                _ = kwargs["replace"]
 
-                flag_2 = next(token_stream)
+                weapon = side.temp_weapon
+                assert weapon
+                side.temp_weapon = None
+                parsed_action += f"Discarded {weapon.name}"
+                del weapon
 
-                try:
-                    weapon_slot = int(flag_2)
-                except ValueError:
-                    # `switch weapon <f>` : f is not parseable into an integer
-                    return CommandResult("Invalid arguments to `switch`", ok=False)
+            case "attack":
+                _ = kwargs["fight"]
 
-                if weapon_slot not in range(1, 6):
-                    # `switch weapon <f>` : f is out of the range [1, 5]
-                    return CommandResult("Invalid arguments to `switch`", ok=False)
+            case "pass":
+                _ = kwargs["fight"]
 
-                target_weapon = inventory.weapons[weapon_slot - 1]
+            case "abandon":
+                _ = kwargs["fight"]
+
+        arg = next(token_stream)
+        val = int(arg)
+
+        match command_name:
+            case "equip":
+                if val not in range(1, 6):
+                    return CommandResult("Invalid arguments to `equip`", ok=False)
+
+                target_weapon = inventory.weapons[val - 1]
                 if target_weapon is None:
-                    # `switch weapon <f>` : slot f is None
-                    return CommandResult(f"Slot {weapon_slot} is None", ok=False)
+                    return CommandResult(f"Slot {val} is None", ok=False)
 
-                # Switch weapon to the target_weapon
+                # Valid command
                 inventory.equipped_weapon = target_weapon
-                parsed_action += f"to {target_weapon.name}"
+                parsed_action += f"Equipped {target_weapon.name}"
+
+            case "replace":
+                if val not in range(1, 6):
+                    return CommandResult("Invalid arguments to `replace`", ok=False)
+
+                target_weapon = inventory.weapons[val - 1]
+                assert target_weapon
+
+                weapon = side.temp_weapon
+                assert weapon
+                side.temp_weapon = None
+                inventory.weapons[val - 1] = weapon
+                inventory.equipped_weapon = weapon
+                parsed_action += f"Replaced {{{val}}} with {weapon.name}"
+            case "heal":
+                if val not in range(1, 6):
+                    return CommandResult("Invalid arguments to `heal`", ok=False)
+
+                target_heal = inventory.heals[val - 1]
+                if target_heal is None:
+                    return CommandResult(f"Slow {val} is None", ok=False)
+
+                inventory.heals[val - 1] = None
+
+                heals = list(filter(lambda heal: heal, inventory.heals))
+                inventory.heals = [None] * 5
+                for heal in heals:
+                    assert heal
+                    inventory.add_heal(heal)
+
+                heal_qty = floor(state.hp.max_hp * target_heal.amount / 100)
+                old_hp = state.hp.hp
+                state.hp.hp = (
+                    # Ensure that you can't heal over max hp
+                    x
+                    if (x := old_hp + heal_qty) <= state.hp.max_hp
+                    else state.hp.max_hp
+                )
+                parsed_action += f"Healed {state.hp.hp - old_hp}HP"
 
         next(token_stream)
+        # This line will never be run, but my python LSP wants the function to return a CommandResult
+        return CommandResult(f"Invalid arguments to `{command_name}`", ok=False)
 
+    except KeyError:
+        # If your LSP says this could be unbound, trust me it won't
+        return CommandResult(f"Cannot use `{command_name}` now", ok=False)
+    except ValueError:
+        return CommandResult("Argument must be an integer", ok=False)
     except StopIteration:
         return CommandResult(parsed_action, ok=True)
