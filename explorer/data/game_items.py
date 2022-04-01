@@ -1,6 +1,6 @@
 from typing import Callable
-from ..ctx import Delusion, Delusions, Healable, Rarity, Weapon
 
+from ..ctx import Delusion, Delusions, Healable, Rarity, Weapon, state
 
 Weapons: dict[Rarity, dict[int, Callable[..., Weapon]]] = {
     Rarity.Common: {
@@ -50,7 +50,7 @@ Weapons: dict[Rarity, dict[int, Callable[..., Weapon]]] = {
 }
 
 Heals: dict[int, Callable[..., Healable]] = {
-    1: lambda: Healable("Bandage", 10, Rarity.Common),
+    1: lambda: Healable("Bandage", 15, Rarity.Common),
     2: lambda: Healable("Health Pot", 25, Rarity.Rare),
     3: lambda: Healable("Med Kit", 75, Rarity.Epic),
     4: lambda: Healable("Blessing", 100, Rarity.Mythic),
