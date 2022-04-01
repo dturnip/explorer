@@ -191,6 +191,18 @@ class GameWrapper:
             case 24:  # MONEY
                 player_color = Colors.MONEY
                 player_char = "E"
+            case 26:  # HEAL
+                player_color = Colors.HEAL
+                player_char = "E"
+            case 34:  # ATTACK
+                enemy = game.check_enemy(player.map_y, player.map_x)
+                if enemy.enemy:
+                    player_color = Colors.ENEMY
+                    player_char = "F"
+                else:
+                    player_color = Colors.OVERLAY
+                    player_char = ""
+
             case _:
                 player_color = Colors.OVERLAY
                 player_char = ""
