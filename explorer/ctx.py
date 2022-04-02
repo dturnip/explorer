@@ -278,6 +278,7 @@ class Inventory(RecordClass):
         if amount_of_weapons < 5:
             self.weapons[amount_of_weapons] = weapon
             Log(f"Got {weapon.name}!")
+            state.check_xp()
             return
 
         side = Side()  # type: ignore
@@ -294,7 +295,6 @@ class Inventory(RecordClass):
         for i, w in enumerate(inventory.weapons):
             if w:
                 msg = f"┃ {i+1}. {w.name} [{w.delusion.get_symbol()} {w.atk} {str(w.rarity)[7:8]}]"
-                # Log(f"┃ {i+1}. {w.name} [{w.delusion.get_symbol()} {w.atk} {str(w.rarity)[7:8]}]")
                 Log(f"{msg}{' ' * (G.padding_width - 6 - len(msg))}┃")
 
         Log(f"┗{'━' * (G.padding_width - 7)}┛")
@@ -361,17 +361,6 @@ class State(RecordClass):
 
     def check_xp(self) -> None:
         # Recursive function that updates hp, xp, weapon atk based on player level
-        if self.level.level == 10:
-            return
-
-        if self.level.xp < self.level.max_xp:
-            return
-
-        self.level.level += 1
-        self.level.max_xp = LEVEL_META[self.level.level]["max_xp"]
-
-        self.hp.hp = LEVEL_META[self.level.level]["base_max_hp"]
-        self.hp.max_hp = LEVEL_META[self.level.level]["base_max_hp"]
 
         for weapon in inventory.weapons:
             if weapon:
@@ -390,6 +379,36 @@ class State(RecordClass):
             while temp_weapon.level < self.level.level:
                 temp_weapon.atk = floor(temp_weapon.atk * 1.5)
                 temp_weapon.level += 1
+
+        if self.level.level == 10:
+            return
+
+        if self.level.xp < self.level.max_xp:
+            return
+
+        self.level.level += 1
+        self.level.max_xp = LEVEL_META[self.level.level]["max_xp"]
+
+        self.hp.hp = LEVEL_META[self.level.level]["base_max_hp"]
+        self.hp.max_hp = LEVEL_META[self.level.level]["base_max_hp"]
+
+        # for weapon in inventory.weapons:
+        #     if weapon:
+        #         if weapon.level > self.level.level:
+        #             raise Exception("Weapon level and player level are out of sync!")
+        #
+        #         while weapon.level < self.level.level:
+        #             weapon.atk = floor(weapon.atk * 1.5)
+        #             weapon.level += 1
+        #
+        # temp_weapon = Side().temp_weapon  # type: ignore
+        # if temp_weapon:
+        #     if temp_weapon.level > self.level.level:
+        #         raise Exception("Temp Weapon level and player level are out of sync!")
+        #
+        #     while temp_weapon.level < self.level.level:
+        #         temp_weapon.atk = floor(temp_weapon.atk * 1.5)
+        #         temp_weapon.level += 1
 
         self.check_xp()
 
