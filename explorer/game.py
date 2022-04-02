@@ -78,6 +78,22 @@ class Game:
         self.remove_tile(y, x)
         state.add_xp(10)
 
+    @staticmethod
+    def random_heal() -> Healable:
+        rng = random.random()
+        # Chance for bandage: 60%
+        # Chance for health pot: 25%
+        # Chance for med kit: 12%
+        # Chance for blessing: 3%
+        if rng < 0.03:
+            return Heals[4]()
+        elif rng < 0.15:
+            return Heals[3]()
+        elif rng < 0.40:
+            return Heals[2]()
+        else:
+            return Heals[1]()
+
     def interact_tile(self) -> None:
         y, x = player.map_y, player.map_x
         match self.game_map[y][x].id:
@@ -102,31 +118,26 @@ class Game:
                         inventory.add_heal(rand_heal)
                         inventory.add_heal(rand_heal2)
                     case _:
-                        # Not implemeneted for this chest yet!
-                        pass
+                        self.handle_chest(y, x)
+                        rng = random.randint(1, 6)
+                        rarity = (
+                            Rarity.Common
+                            if rng == 1 or rng == 2 or rng == 3
+                            else Rarity.Rare
+                            if rng == 4 or rng == 5
+                            else Rarity.Epic
+                        )
+                        idx = random.randint(1, 9)
+                        rand_weapon = Weapons[rarity][idx]()
+                        rand_heal = self.random_heal()
+                        inventory.add_weapon(rand_weapon)
+                        inventory.add_heal(rand_heal)
             case 24:  # MONEY
-                inventory.money += 5
-                self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
-                self.redraw()
-                # Side().log(f"Got $5!")  # type: ignore
-                # self.render()
-            case 26:  # HEAL
-                # Chance for bandage: 60%
-                # Chance for health pot: 25%
-                # Chance for med kit: 12%
-                # Chance for blessing: 3%
-                idx = random.random()
-                if idx < 0.03:
-                    heal = Heals[4]()
-                elif idx < 0.15:
-                    heal = Heals[3]()
-                elif idx < 0.40:
-                    heal = Heals[2]()
-                else:
-                    heal = Heals[1]()
-
-                inventory.add_heal(heal)
                 self.remove_tile(y, x)
+                inventory.money += 5
+            case 26:  # HEAL
+                self.remove_tile(y, x)
+                inventory.add_heal(self.random_heal())
             case _:
                 pass
 
