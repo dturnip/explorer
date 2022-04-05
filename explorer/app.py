@@ -119,25 +119,6 @@ class GameWrapper:
                     case 69 | 101:  # E or e
                         # Interact with the tile
                         game.interact_tile()
-                    case 70 | 102:  # F or f
-                        if game.game_map[player.map_y][player.map_x].id != 34:
-                            return
-
-                        enemy = game.check_enemy(player.map_y, player.map_x)
-                        if not enemy.enemy:
-                            return
-
-                        index_row = [
-                            game.game_map.index(r) for r in game.game_map if enemy.enemy in r
-                        ][0]
-                        index_col = [
-                            r.index(enemy.enemy) for r in game.game_map if enemy.enemy in r
-                        ][0]
-
-                        game.remove_tile(index_row, index_col)
-                        game.remove_tile(player.map_y, player.map_x)
-                        state.hp.hp -= 30
-                        game.render()
                     case 73 | 105:  # I or i
                         side.toggle_inventory()
                     case 67 | 99:  # C or c
@@ -208,7 +189,7 @@ class GameWrapper:
                 enemy = game.check_enemy(player.map_y, player.map_x)
                 if enemy.enemy:
                     player_color = Colors.ENEMY
-                    player_char = "F"
+                    player_char = "E"
                 else:
                     player_color = Colors.OVERLAY
                     player_char = ""

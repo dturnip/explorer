@@ -1,16 +1,29 @@
 import random
 from curses import window
 
-from .ctx import Healable, Rarity, Weapon, inventory, player, state
-from .data.game_items import Heals, Weapons
+from .ctx import Delusion, Healable, Rarity, Weapon, inventory, player, state
+from .data.game_items import Enemies, Heals, Weapons
 from .globals import Colors
 from .globals import Globals as G
 from .lib.parser import Tile
 
 
 class EnemyResult:
-    def __init__(self, enemy: Tile | None):
+    def __init__(
+        self,
+        enemy: Tile | None = None,
+        pos: tuple[int, int] | None = None,
+        atk: int | None = None,
+        hp: int | None = None,
+        delusion: Delusion | None = None,
+        name: str | None = None,
+    ) -> None:
         self.enemy = enemy
+        self.pos = pos
+        self.atk = atk
+        self.hp = hp
+        self.delusion = delusion
+        self.name = name
 
 
 # GameObject
@@ -59,16 +72,23 @@ class Game:
         left = self.game_map[y][x - 1]
         right = self.game_map[y][x + 1]
 
-        if up.id == 22:
-            return EnemyResult(up)
-        if down.id == 22:
-            return EnemyResult(down)
-        if left.id == 22:
-            return EnemyResult(left)
-        if right.id == 22:
-            return EnemyResult(right)
+        tiles = [up, down, left, right]
+        ids = [up.id, down.id, left.id, right.id]
 
-        return EnemyResult(None)
+        try:
+            enemy_idx = ids.index(22)
+        except ValueError:
+            return EnemyResult()
+
+        enemy = tiles[enemy_idx]
+
+        y = [self.game_map.index(r) for r in self.game_map if enemy in r][0]
+        x = [r.index(enemy) for r in self.game_map if enemy in r][0]
+
+        enemy_data = Enemies[(player.y, player.x)]
+        atk, hp, delusion, name = enemy_data.values()
+
+        return EnemyResult(enemy, (y, x), atk, hp, delusion, name)
 
     def remove_tile(self, y, x) -> None:
         self.game_map[y][x] = Tile(".", False, Colors.PATH, 21, "PATH")
@@ -138,6 +158,18 @@ class Game:
             case 26:  # HEAL
                 self.remove_tile(y, x)
                 inventory.add_heal(self.random_heal())
+            case 34:  # FIGHT
+                if self.game_map[player.map_y][player.map_x].id != 34:
+                    return
+
+                enemy = self.check_enemy(player.map_y, player.map_x)
+                if not enemy.enemy:
+                    return
+
+                # TODO Set the enemy into temp state, and enter fight state(ctx.py)
+                self.remove_tile(enemy.pos[0], enemy.pos[1])
+                state.hp.hp -= 30
+                self.render()
             case _:
                 pass
 

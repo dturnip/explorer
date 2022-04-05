@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable, Literal
 
 from ..ctx import Delusion, Delusions, Healable, Rarity, Weapon, state
 
@@ -54,4 +54,13 @@ Heals: dict[int, Callable[..., Healable]] = {
     2: lambda: Healable("Health Pot", 25, Rarity.Rare),
     3: lambda: Healable("Med Kit", 75, Rarity.Epic),
     4: lambda: Healable("Blessing", 100, Rarity.Mythic),
+}
+
+Enemies: dict[tuple[int, int], dict[Literal["atk", "hp", "delusion", "name"], Any]] = {
+    (186, 79): {
+        "hp": 30,
+        "atk": 15,
+        "delusion": Delusion(Delusions.Stun),
+        "name": "Stone Soldier",
+    },
 }
