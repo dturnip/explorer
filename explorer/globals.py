@@ -18,6 +18,9 @@ class Globals:
     center_x = width // 2
     game_height = height - 2 * floor(height / 8)
     game_width = floor((width - 2 * floor(width / 8)) * 7 / 8)
+
+    # Map padding so the player can actually move to the edge of the map.
+    # It's a weird curses thing
     padding_height = (height - game_height) // 2
     padding_width = width - game_width
 

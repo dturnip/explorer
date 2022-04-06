@@ -1,14 +1,20 @@
 from math import floor
+import random
 from typing import Callable
 
 from PIL import Image
 
-from ..ctx import Side, inventory, state
+from ..ctx import Delusions, Phase, Side, Turn, inventory, state, player, fight_state, Log
 from ..globals import Colors
 from ..globals import Globals as G
 
 
 class Tile:
+    """
+    Tile objects that the game map is comprised of
+    """
+
+    # Memory optimize
     __slots__ = ("char", "barrier", "color", "id", "name")
 
     def __init__(self, char: str, barrier: bool, color: int, id: int, name: str) -> None:
@@ -71,7 +77,7 @@ PIXEL_TO_TILE: dict[tuple[int, int, int], Callable[..., Tile]] = {
     (255, 180, 0): lambda: Tile("", False, Colors.KEY, 33, "KEY"),
     # Attack path
     # Change this to Colors.PATH once it works
-    (200, 0, 0): lambda: Tile(".", False, Colors.ENEMY, 34, "ATTACK"),
+    (200, 0, 0): lambda: Tile(".", False, Colors.PATH, 34, "ATTACK"),
     # Transparrent tile
     (255, 255, 255): lambda: Tile(" ", False, Colors.BLACK, 999, "VOID"),
 }
@@ -111,6 +117,7 @@ COMMANDS = {
     "pass",
     "heal",
     "abandon",
+    "showheals",
 }
 
 
@@ -121,6 +128,9 @@ class CommandResult:
 
 
 def parse_command(command: str, **kwargs) -> CommandResult:
+    """
+    Takes in a command, verifies it, and hence parses it. Returns a CommandResult
+    """
     tokens = command.split()
     token_stream = iter(tokens)
 
@@ -136,6 +146,17 @@ def parse_command(command: str, **kwargs) -> CommandResult:
 
         if not command_name in COMMANDS:
             return CommandResult(f"{command_name}: invalid command", ok=False)
+
+        if kwargs.get("fight"):
+            match fight_state.phase:
+                case Phase.begin:
+                    if command_name not in ["heal", "attack", "pass", "abandon", "showheals"]:
+                        return CommandResult("Can't use that in begin phase!", ok=False)
+                case Phase.end:
+                    if command_name not in ["heal", "pass", "abandon", "showheals"]:
+                        return CommandResult("Can't use that in end phase!", ok=False)
+                case _:
+                    pass
 
         match command_name:
             case "equip":
@@ -160,14 +181,143 @@ def parse_command(command: str, **kwargs) -> CommandResult:
                 parsed_action += f"Discarded {weapon.name}"
                 del weapon
 
+            case "showheals":
+                _ = kwargs["fight"]
+
+                # Filters out all None elements
+                heals = list(filter(lambda heal: heal, inventory.heals))
+
+                if len(heals) == 0:
+                    return CommandResult("You have 0 heals", ok=True)
+
+                Log("~~~YOUR HEALS~~~")
+                for i, heal in enumerate(heals):
+                    assert heal
+                    Log(f"{i+1}. {heal.name} [+{heal.amount}%]")
+
+                return CommandResult("", ok=True)
+
             case "attack":
                 _ = kwargs["fight"]
+                assert inventory.equipped_weapon
+                assert side.enemy
+
+                match fight_state.turn:
+                    case Turn.player:
+                        damage = inventory.equipped_weapon.atk
+
+                        if (
+                            inventory.equipped_weapon.delusion.get_strong()
+                            == side.enemy.delusion.type
+                        ):
+                            damage = floor(damage * 1.5)
+
+                        # Counter ability
+                        match side.enemy.delusion.type:
+                            case Delusions.Mech:
+                                Log("~~~Enemy Mech Counter~~~")
+                                rng = random.random()
+                                if rng <= 0.75:
+                                    damage //= 2
+                                    charge = floor(side.enemy.original_atk * 10 / 100)
+                                    side.enemy.atk += charge
+                                    Log("Halved damage")
+                                    Log(f"(ENEMY) +ATK {charge}")
+                                else:
+                                    Log("Did nothing")
+
+                            case Delusions.Corrupt:
+                                Log("~~~Enemy Corrupt Counter~~~")
+                                rng = random.random()
+                                if rng <= 0.5:
+                                    mirror_damage = floor(damage / 2)
+                                    damage = 0
+
+                                    state.hp.hp -= mirror_damage
+                                    Log("Corrupted damage")
+                                    Log(f"(YOU) -HP {mirror_damage}")
+                                else:
+                                    Log("Did nothing")
+
+                            case _:
+                                pass
+
+                        side.enemy.hp -= damage
+                        Log("")
+                        Log(f"You Dealt {damage} damage")
+
+                    case Turn.opponent:
+                        damage = side.enemy.atk
+
+                        if (
+                            side.enemy.delusion.get_strong()
+                            == inventory.equipped_weapon.delusion.type
+                        ):
+                            damage = floor(damage * 1.5)
+
+                        # Counter ability
+                        match inventory.equipped_weapon.delusion.type:
+                            case Delusions.Mech:
+                                Log("~~~Your Mech Counter~~~")
+                                rng = random.random()
+                                if rng <= 0.75:
+                                    damage //= 2
+                                    charge = floor(side.old_weapon_atk * 10 / 100)
+                                    inventory.equipped_weapon.atk += charge
+                                    Log("Halved damage")
+                                    Log(f"(YOU) +ATK {charge}")
+                                else:
+                                    Log("Did nothing")
+
+                            case Delusions.Corrupt:
+                                Log("~~~Your Corrupt Counter~~~")
+                                rng = random.random()
+                                if rng <= 0.5:
+                                    mirror_damage = floor(damage / 2)
+                                    damage = 0
+
+                                    side.enemy.hp -= mirror_damage
+                                    Log("Corrupted damage")
+                                    Log(f"(ENEMY) -HP {mirror_damage}")
+                                else:
+                                    Log("Did nothing")
+
+                        state.hp.hp -= damage
+                        Log("")
+                        Log(f"Enemy Dealt {damage} damage")
+
+                fight_state.phase = Phase.end
+                Log("")
 
             case "pass":
                 _ = kwargs["fight"]
 
+                if fight_state.turn == Turn.player:
+                    fight_state.turn = Turn.opponent
+                elif fight_state.turn == Turn.opponent:
+                    fight_state.turn = Turn.player
+
+                fight_state.player_fxd = False
+                fight_state.opponent_fxd = False
+
+                fight_state.phase = Phase.begin
+
+                parsed_action += "Turn passed"
+
             case "abandon":
                 _ = kwargs["fight"]
+                assert inventory.equipped_weapon
+
+                # Reset all this fight state
+                side.enemy = None
+                inventory.equipped_weapon.atk = side.old_weapon_atk
+                side.old_weapon_atk = 0
+                fight_state.turn = Turn.null
+                fight_state.phase = Phase.null
+                fight_state.player_fxd = False
+                fight_state.opponent_fxd = False
+
+                parsed_action += "Abandoned fight"
 
         arg = next(token_stream)
         val = int(arg)

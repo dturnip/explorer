@@ -1,4 +1,6 @@
+from math import floor
 from typing import Any, Callable, Literal
+
 
 from ..ctx import Delusion, Delusions, Healable, Rarity, Weapon, state
 
@@ -57,10 +59,202 @@ Heals: dict[int, Callable[..., Healable]] = {
 }
 
 Enemies: dict[tuple[int, int], dict[Literal["atk", "hp", "delusion", "name"], Any]] = {
-    (186, 79): {
+    (186, 78): {
+        "hp": 25,
+        "atk": 18,
+        "delusion": Delusion(Delusions.Bleed),
+        "name": "Crystode",
+    },
+    (162, 61): {
         "hp": 30,
         "atk": 15,
         "delusion": Delusion(Delusions.Stun),
         "name": "Stone Soldier",
+    },
+    (194, 90): {
+        "hp": 40,
+        "atk": 12,
+        "delusion": Delusion(Delusions.Plant),
+        "name": "Leaf Lurker",
+    },
+    (212, 92): {
+        "hp": 33,
+        "atk": 14,
+        "delusion": Delusion(Delusions.Drain),
+        "name": "Sideways Ghost",
+    },
+    (220, 70): {
+        "hp": 35,
+        "atk": 21,
+        "delusion": Delusion(Delusions.Stun),
+        "name": "Mini Minotaur",
+    },
+    (238, 81): {
+        "hp": 33,
+        "atk": 24,
+        "delusion": Delusion(Delusions.Mech),
+        "name": "Ruin Guard",
+    },
+    (178, 107): {
+        "hp": 32,
+        "atk": 14,
+        "delusion": Delusion(Delusions.Freeze),
+        "name": "Iceberg Turtle",
+    },
+    (178, 129): {
+        "hp": 26,
+        "atk": 18,
+        "delusion": Delusion(Delusions.Freeze),
+        "name": "Mekajiki",
+    },
+    (193, 131): {
+        "hp": 40,
+        "atk": 20,
+        "delusion": Delusion(Delusions.Zap),
+        "name": "Electryx",
+    },
+    (170, 4): {
+        "hp": 21,
+        "atk": 15,
+        "delusion": Delusion(Delusions.Corrupt),
+        "name": "Wavy Shadow",
+    },
+    (168, 47): {
+        "hp": 34,
+        "atk": 22,
+        "delusion": Delusion(Delusions.Bleed),
+        "name": "Fang",
+    },
+    (168, 49): {
+        "hp": 35,
+        "atk": 27,
+        "delusion": Delusion(Delusions.Burn),
+        "name": "Phoenix",
+    },
+    (168, 51): {
+        "hp": 43,
+        "atk": 22,
+        "delusion": Delusion(Delusions.Mech),
+        "name": "West Key Guardian",
+    },
+    (215, 129): {
+        "hp": 30,
+        "atk": 19,
+        "delusion": Delusion(Delusions.Zap),
+        "name": "Baby Thunderbird",
+    },
+    (217, 109): {
+        "hp": 32,
+        "atk": 20,
+        "delusion": Delusion(Delusions.Drain),
+        "name": "Bandit",
+    },
+    (219, 144): {
+        "hp": 28,
+        "atk": 19,
+        "delusion": Delusion(Delusions.Corrupt),
+        "name": "Mirror Knight",
+    },
+    (225, 117): {
+        "hp": 42,
+        "atk": 11,
+        "delusion": Delusion(Delusions.Plant),
+        "name": "Giga Gnome",
+    },
+    (212, 31): {
+        "hp": 40,
+        "atk": 10,
+        "delusion": Delusion(Delusions.Plant),
+        "name": "Eden",
+    },
+    (214, 4): {
+        "hp": 42,
+        "atk": 13,
+        "delusion": Delusion(Delusions.Plant),
+        "name": "Cayenne",
+    },
+    (220, 6): {
+        "hp": 30,
+        "atk": 24,
+        "delusion": Delusion(Delusions.Burn),
+        "name": "Calcifer",
+    },
+    (222, 25): {
+        "hp": 33,
+        "atk": 23,
+        "delusion": Delusion(Delusions.Bleed),
+        "name": "Topaz Tiger",
+    },
+    (235, 25): {
+        "hp": 39,
+        "atk": 21,
+        "delusion": Delusion(Delusions.Stun),
+        "name": "Cavalier",
+    },
+    (237, 6): {
+        "hp": 43,
+        "atk": 34,
+        "delusion": Delusion(Delusions.Bleed),
+        "name": "Mythic Guardian",
+    },
+    (251, 123): {
+        "hp": 35,
+        "atk": 20,
+        "delusion": Delusion(Delusions.Drain),
+        "name": "Life Mage",
+    },
+    (233, 125): {
+        "hp": 37,
+        "atk": 19,
+        "delusion": Delusion(Delusions.Mech),
+        "name": "Iron Ballista",
+    },
+    (235, 144): {
+        "hp": 35,
+        "atk": 39,
+        "delusion": Delusion(Delusions.Burn),
+        "name": "Witch of Flames",
+    },
+    (241, 133): {
+        "hp": 48,
+        "atk": 40,
+        "delusion": Delusion(Delusions.Corrupt),
+        "name": "Dragon of Terror",
+    },
+    (242, 157): {
+        "hp": 29,
+        "atk": 23,
+        "delusion": Delusion(Delusions.Corrupt),
+        "name": "Necromancer",
+    },
+    (242, 161): {
+        "hp": 25,
+        "atk": 27,
+        "delusion": Delusion(Delusions.Burn),
+        "name": "Hellfire Stallion",
+    },
+    (242, 165): {
+        "hp": 32,
+        "atk": 22,
+        "delusion": Delusion(Delusions.Freeze),
+        "name": "Arctic Prisoner",
+    },
+    (242, 169): {
+        "hp": 35,
+        "atk": 24,
+        "delusion": Delusion(Delusions.Mech),
+        "name": "Heavy Sentry",
+    },
+    (242, 173): {
+        "hp": 35,
+        "atk": 31,
+        "delusion": Delusion(Delusions.Bleed),
+        "name": "Executioner",
+    },
+    (242, 177): {
+        "hp": 34,
+        "atk": 25,
+        "delusion": Delusion(Delusions.Drain),
+        "name": "Scoundrel",
     },
 }

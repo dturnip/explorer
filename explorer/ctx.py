@@ -4,6 +4,7 @@ from enum import Enum, auto
 from getpass import getuser
 from math import floor
 
+
 from recordclass import RecordClass  # type: ignore
 
 from .globals import Colors
@@ -12,6 +13,10 @@ from .lib.singleton import singleton
 
 
 class Player:
+    """
+    Player class to keep track of all the player state
+    """
+
     def __init__(self, y: int, x: int) -> None:
         self.__y = y
         self.__x = x
@@ -43,6 +48,11 @@ class Player:
 
 
 class Phase(Enum):
+    """
+    Battle phases
+    Phase.counter is deprecated
+    """
+
     begin = auto()
     counter = auto()
     end = auto()
@@ -134,27 +144,15 @@ class Delusion:
     Depending on the battle phase and turn, roll a chance to apply effects:
     ** If the percentage is a decimal value, take the ceil of it **
 
-    Freeze:     50% chance || Take 5% out of their HP, Skip their turn
-    Burn:       50% chance || Deal an extra 30% weapon damage
-    Plant:      75% chance || Heal me by 10% of my max HP, increase my weapon ATK by 50% this turn
-    Mech:       75% chance || Take half damage, increase my weapon ATK by 25% for the duration of the duel
-    Corrupt:    50% chance || Make the enemy attack itself with half damage, negate effects
-    Stun:       50% chance || Skip their turn
-    Zap:        50% chance || Weaken their weapon ATK by 10%
-    Drain:      75% chance || Heal me by what I strike
-    Bleed:      50% chance || Reduce their HP by 10% of their max HP
-
-    Base HP Stats for entities of delusions:
-
-    Freeze:     83
-    Burn:       64
-    Plant:      96
-    Mech:       90
-    Corrupt:    69
-    Stun:       85
-    Zap:        80
-    Drain:      78
-    Bleed:      76
+    Freeze:     35% chance || Take 5% out of their HP, Skip their turn, END
+    Burn:       50% chance || Deal an extra 25% weapon damage, END
+    Plant:      75% chance || Heal me by 10% of my max HP, increase my weapon ATK by 10%, BEGIN
+    Mech:       75% chance || Take half damage, increase my weapon ATK by 10%, COUNTER
+    Corrupt:    50% chance || Make the enemy attack itself with half damage, COUNTER
+    Stun:       35% chance || Skip their turn, END
+    Zap:        50% chance || Weaken their weapon ATK by 15%, BEGIN
+    Drain:      75% chance || Heal me by 50% of what I strike, END
+    Bleed:      50% chance || Reduce their HP by 10% of their max HP, END
 
     Base ATK Stats for weapons of delusions (~common~rare~epic~mythic):
 
@@ -167,11 +165,6 @@ class Delusion:
     Zap:        Moderate    ~18~21~23~27
     Drain:      Moderate    ~13~18~22~26
     Bleed:      High        ~23~25~27~34
-
-    - When entities level up, their max HP becomes 110% of their current max HP
-    - When entities level up, their current HP becomes max if it is currently max, otherwise it stays the same
-    - When weapons level up, its ATK increases by 110% of its current ATK
-    - Weapon level correlates exactly to the entity level
     """
 
     __slots__ = ("type", "phase")
@@ -262,6 +255,10 @@ class Healable:
 
 
 class Inventory(RecordClass):
+    """
+    Exported inventory object which keeps track of all inventory state
+    """
+
     weapons: list[Weapon | None]
     heals: list[Healable | None]
     items: list[str | None]
@@ -270,8 +267,6 @@ class Inventory(RecordClass):
 
     def add_weapon(self, weapon: Weapon) -> None:
         # By default, weapons is [None, None, None, None, None]
-
-        ## FLAG!
 
         amount_of_weapons = len(list(filter(lambda weapon: weapon, self.weapons)))
 
@@ -299,9 +294,11 @@ class Inventory(RecordClass):
 
         Log(f"┗{'━' * (G.padding_width - 7)}┛")
 
+        # Smart replacement prompt
         side.toggle_prompt()
 
     def add_heal(self, heal: Healable) -> None:
+        # If the heal inventory is full, no more heals can be obtained
         amount_of_heals = len(list(filter(lambda heal: heal, self.heals)))
 
         if amount_of_heals < 5:
@@ -320,6 +317,9 @@ class Inventory(RecordClass):
 
     @money.setter
     def money(self, n: int) -> None:
+        """
+        Proxy to log when money changes
+        """
         curr = self._money
         self._money = n
         Log(f"Money {curr} -> {n}")
@@ -343,6 +343,10 @@ for _ in range(9):
 
 
 class State(RecordClass):
+    """
+    General game state
+    """
+
     class LevelData(RecordClass):
         level: int
         xp: int
@@ -360,7 +364,7 @@ class State(RecordClass):
         self.check_xp()
 
     def check_xp(self) -> None:
-        # Recursive function that updates hp, xp, weapon atk based on player level
+        """Recursive function that updates hp, xp, weapon atk based on player level"""
 
         for weapon in inventory.weapons:
             if weapon:
@@ -452,6 +456,8 @@ class FightState:
     def __init__(self) -> None:
         self.turn: Turn = Turn.null
         self.phase: Phase = Phase.null
+        self.player_fxd: bool = False
+        self.opponent_fxd: bool = False
 
 
 player = Player(176, 61)
@@ -477,6 +483,10 @@ class SideState(Enum):
 
 @singleton
 class Side:
+    """
+    Singleton object used for keeping track of the UI on the side pad, and some temporary state
+    """
+
     def __init__(self, pad: window, stdscr: window) -> None:
         self.pad = pad
         self.pad.bkgd(" ", Colors.WALL)
@@ -485,6 +495,7 @@ class Side:
         self.state: SideState = SideState.default
         self.previous_state: SideState = SideState.default
 
+        # Game Console logging
         self.log_buffer: deque[str] = deque()
         self.prompt_buffer: str = ""
 
@@ -493,9 +504,17 @@ class Side:
 
         self.stdscr = stdscr
 
+        # Replacement weapon state
         self.temp_weapon: Weapon | None = None
 
+        # Temporary fight state
+        self.enemy = None
+        self.old_weapon_atk: int = 0
+
     def draw_stats(self) -> None:
+        """
+        Draws the UI for the main side page
+        """
         draw = self.pad.addstr
         user = getuser()
         name = user if len(user) <= G.padding_width - 4 else user[: G.padding_width - 7] + "..."
@@ -534,6 +553,9 @@ class Side:
         draw(f"{player.x}")
 
     def draw_weapon(self, weapon: Weapon | None) -> None:
+        """
+        Helper function to draw weapons for the inventory page
+        """
         draw = self.pad.addstr
 
         if weapon is None:
@@ -553,6 +575,9 @@ class Side:
         draw(f"{weapon.atk}]\n")
 
     def draw_heal(self, heal: Healable | None) -> None:
+        """
+        Helper function to draw healables on the inventory page
+        """
         draw = self.pad.addstr
 
         if heal is None:
@@ -566,6 +591,9 @@ class Side:
         draw(f"[+{heal.amount}%]\n")
 
     def draw_inventory(self) -> None:
+        """
+        Draws the UI for the inventory page
+        """
         draw = self.pad.addstr
 
         self.pad.clear()
@@ -584,6 +612,9 @@ class Side:
             self.draw_heal(heal)
 
     def draw_console_stats(self) -> None:
+        """
+        Helper function to draw stats that are above the console log and prompt
+        """
         draw = self.pad.addstr
 
         draw("YOU━━━━━━\n")
@@ -599,18 +630,37 @@ class Side:
             f"{str(current_weapon.delusion.type)[10:] + ' ' + current_weapon.delusion.get_symbol() if current_weapon else 'NA'}\n",
             current_weapon.delusion.get_color() if current_weapon else 0,
         )
-        draw(f"\n{'Enemy Name'}━━━━━━\n")
+        draw(f"\n{'ENEMY NAME' if not self.enemy else self.enemy.name }━━━━━━\n")
         draw("HP: ", A_BOLD)
-        draw(f"Hp")
+        enemy_hp_color = 0
+        if self.enemy:
+            enemy_hp = self.enemy.hp
+            enemy_max = self.enemy.max_hp
+            low = enemy_max // 3
+            mid = low * 2
+            match (enemy_hp <= low, enemy_hp >= mid + 1):
+                case (True, False):
+                    enemy_hp_color = Colors.HP_LOW
+                case (False, False):
+                    enemy_hp_color = Colors.HP_MID
+                case (False, True):
+                    enemy_hp_color = Colors.HP_HIGH
+        draw(f"{'HP' if not self.enemy else self.enemy.hp}", enemy_hp_color)
         draw(" / ")
-        draw(f"Max\n", Colors.HP_HIGH)
+        draw(f"{'MAX' if not self.enemy else self.enemy.max_hp}\n", Colors.HP_HIGH)
         draw("ATK/DEL: ", A_BOLD)
-        draw(f"ATK")
+        draw(f"{'ATK' if not self.enemy else self.enemy.atk}")
         draw(" / ")
-        draw(f"DEL\n\n")
+        draw(
+            f"{'DEL' if not self.enemy else str(self.enemy.delusion.type)[10:] + ' ' + self.enemy.delusion.get_symbol()}\n\n",
+            self.enemy.delusion.get_color() if self.enemy else 0,
+        )
         draw("~~~~~~\n")
 
     def draw_console(self, prompt: bool) -> None:
+        """
+        Draws the UI for the console/prompt page
+        """
         draw = self.pad.addstr
 
         self.pad.clear()
@@ -638,6 +688,9 @@ class Side:
             draw(self.prompt_buffer, Colors.HEAL)
 
     def log(self, t: str) -> None:
+        """
+        Appends to the log buffer queue. Pops the earliest element in the queue if there is text overflow
+        """
         if len(self.log_buffer) > self.max_log_length:
             raise Exception("Log buffer length is over the max space")
 
