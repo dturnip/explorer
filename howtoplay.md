@@ -16,6 +16,7 @@
 
 - GPU Accelerated terminal emulator such as Alacritty. Trust me, it boosts performance by a lot!
 - Large font size (but not too large)
+- Playing in full screen
 
 Sample Alacritty config in `~/.config/alacritty/alacritty.yml`:
 
