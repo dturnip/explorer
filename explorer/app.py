@@ -188,7 +188,12 @@ class GameWrapper:
                                                         atk_wither = floor(
                                                             side.enemy.original_atk * 15 / 100
                                                         )
-                                                        side.enemy.atk -= atk_wither
+
+                                                        # If B has negative attack, it will heal A so the limit is 0
+                                                        side.enemy.atk = max(
+                                                            side.enemy.atk - atk_wither, 0
+                                                        )
+                                                        # side.enemy.atk -= atk_wither
                                                         Log(f"(ENEMY) -ATK {atk_wither}")
                                                     else:
                                                         Log("Did nothing")
@@ -229,7 +234,13 @@ class GameWrapper:
                                                         atk_wither = floor(
                                                             side.old_weapon_atk * 15 / 100
                                                         )
-                                                        inventory.equipped_weapon.atk -= atk_wither
+
+                                                        inventory.equipped_weapon.atk = max(
+                                                            inventory.equipped_weapon.atk
+                                                            - atk_wither,
+                                                            0,
+                                                        )
+                                                        # inventory.equipped_weapon.atk -= atk_wither
                                                         Log(f"(YOU) -ATK {atk_wither}")
                                                     else:
                                                         Log("Did nothing")
